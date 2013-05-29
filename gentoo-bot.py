@@ -49,9 +49,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def resolve_url(self, c, e):
 		"""if found, resolve the title of a url in the message."""
 		msg = e.arguments[0]
-		url_pattern = re.compile("(https?|ftp)://[^\s/$.?#].[^\s]*")
+		url_pattern = re.compile("""https?:\/\/w{0,3}\w*?\.(\w*?\.)?\w{2,3}\S*|www\.(\w*?\.)?\w*?\.\w{2,3}\S*|(\w*?\.)?\w*?\.\w{2,3}[\/\?]\S*""")
 		if re.match(url_pattern, msg):
 			url = re.match(url_pattern, msg).group(0)
+			print('Found url! %s' % url)
 			try:
 				page = urlopen(url)
 			except HTTPError as e:
@@ -60,6 +61,11 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			except URLError as e:
 				c.privmsg(self.channel, "Failed to reach server, reason %s <%s>." % (e.reason, url))
 				return
+			except ValueError:
+				try:
+					page = urlopen("http://%s" % url)
+				except:
+					return
 			page_html = page.readlines()
 			for line in page_html:
 				if re.findall("<title>(.*)</title>", line.decode()):
