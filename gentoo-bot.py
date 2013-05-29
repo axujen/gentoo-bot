@@ -40,8 +40,8 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.installgentoo_reply(c, e)
 
 if __name__ == '__main__':
-	if sys.argv[1]:
+	try:
 		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server)
-	else:
+	except IndexError:
 		Gentoo_Bot = GentooBot("#/g/test", "GentooBot", ig_server)
 	Gentoo_Bot.start()
