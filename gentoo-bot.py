@@ -40,7 +40,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
 				'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd', 'minix',
 				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
-				'Wangblows', "linux", "lunix")
+				'Wangblows', "linux", "lunix", "archlinux")
 		for keyword in ig_keywords:
 			# if keyword.lower() in msg.lower():
 			if re.search(r"\b(%s)\b" % keyword, msg, re.I):
@@ -67,12 +67,11 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 					page = urlopen("http://%s" % url)
 				except:
 					return
-			page_html = page.readlines()
-			for line in page_html:
-				if re.findall("<title>(.*)</title>", line.decode()):
-					title = re.findall('<title>(.*)</title>', line.decode())[0]
-					c.privmsg(self.channel, "Page title: %s <%s>" % (title, url))
-					return
+			page_html = page.readall().decode()
+			if re.findall("<title>(.*)</title>", page_html):
+				title = re.findall('<title>(.*)</title>', page_html)[0]
+				c.privmsg(self.channel, "Page title: %s <%s>" % (title, url))
+				return
 			c.privmsg(self.channel, "No title found for %s." % url)
 
 	def on_pubmsg(self, c, e):
