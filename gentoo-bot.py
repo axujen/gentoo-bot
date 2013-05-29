@@ -28,9 +28,9 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
 		nick = e.source.split('!', 1)[0]
-		ig_keywords = ('windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd')
+		ig_keywords = ('debian', 'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd')
 		for keyword in ig_keywords:
-			if keyword in msg:
+			if keyword.lower() in msg.lower():
 				c.privmsg(self.channel, "%s: Install Gentoo." % nick)
 				break
 
