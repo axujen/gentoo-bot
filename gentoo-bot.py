@@ -67,10 +67,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			try:
 				page = urlopen(url)
 			except HTTPError as e:
-				self.say(c, "HTTP Error %d <%s>" % (e.code, url))
+				self.say(c, "HTTP Error %d" % e.code)
 				return
 			except URLError as e:
-				self.say(c, "Failed to reach server, reason %s <%s>." % (e.reason, url))
+				self.say(c, "Failed to reach server, reason %s" % e.reason)
 				return
 			except ValueError:
 				try:
@@ -80,7 +80,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			page_html = page.readall().decode()
 			if re.findall(r"<title>(.*)</title>", page_html):
 				title = re.findall(r"<title>(.*)</title>", page_html)[0]
-				self.say(c, "Page title: %s <%s>" % (title, url))
+				self.say(c, "Page title: %s" % title)
 				return
 			self.say(c, "No title found for %s." % url)
 
