@@ -25,6 +25,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		irc.bot.SingleServerIRCBot.__init__(self, [server], nickname, nickname,
 				reconnection_interval=reconnect)
 		self.channel = channel
+		self.reconnect = reconnect
+		self.nickname = nickname
+		self.server = server
+		self.port = port
 
 	def on_welcome(self, c, e):
 		"""docstring for on_welcome"""
@@ -71,7 +75,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
-		sleep(reconnect)
+		sleep(self.reconnect)
 		c.join(self.channel)
 
 if __name__ == '__main__':
