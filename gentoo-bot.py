@@ -20,8 +20,9 @@ import irc.bot
 ig_server = irc.bot.ServerSpec('irc.installgentoo.com')
 
 class GentooBot(irc.bot.SingleServerIRCBot):
-	def __init__(self, channel, nickname, server, port=6667):
-		irc.bot.SingleServerIRCBot.__init__(self, [server], nickname, nickname)
+	def __init__(self, channel, nickname, server, port=6667, reconnect=5):
+		irc.bot.SingleServerIRCBot.__init__(self, [server], nickname, nickname,
+				reconnection_interval=reconnect)
 		self.channel = channel
 
 	def on_welcome(self, c, e):
@@ -70,7 +71,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 if __name__ == '__main__':
 	try:
-		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server, reconnection_interval=5)
+		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server)
 	except IndexError:
-		Gentoo_Bot = GentooBot("#/g/test", "GentooTestBot", ig_server, reconnection_interval=5)
+		Gentoo_Bot = GentooBot("#/g/test", "GentooTestBot", ig_server)
 	Gentoo_Bot.start()
