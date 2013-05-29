@@ -16,6 +16,7 @@
 import sys, re
 from urllib.request import urlopen
 from urllib.error import *
+from time import sleep
 import irc.bot
 ig_server = irc.bot.ServerSpec('irc.installgentoo.com')
 
@@ -63,11 +64,15 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 					return
 			c.privmsg(self.channel, "No title found for %s." % url)
 
-
 	def on_pubmsg(self, c, e):
 		"""docstring for on_pubmsg"""
 		self.installgentoo_reply(c, e)
 		self.resolve_url(c, e)
+
+	def on_kick(self, c, e):
+		"""autorejoin when kicked."""
+		sleep(reconnect)
+		c.join(self.channel)
 
 if __name__ == '__main__':
 	try:
