@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import irc.bot
 ig_server = irc.bot.ServerSpec('irc.installgentoo.com')
 
@@ -28,7 +29,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
 		nick = e.source.split('!', 1)[0]
-		ig_keywords = ('debian', 'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd')
+		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian', 'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd')
 		for keyword in ig_keywords:
 			if keyword.lower() in msg.lower():
 				c.privmsg(self.channel, "%s: Install Gentoo." % nick)
@@ -39,5 +40,8 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.installgentoo_reply(c, e)
 
 if __name__ == '__main__':
-	Gentoo_Bot = GentooBot("#/g/test", "GentooBot", ig_server)
+	if sys.argv[1]:
+		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server)
+	else:
+		Gentoo_Bot = GentooBot("#/g/test", "GentooBot", ig_server)
 	Gentoo_Bot.start()
