@@ -70,7 +70,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 if __name__ == '__main__':
 	try:
-		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server)
+		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server, reconnection_interval=5)
 	except IndexError:
-		Gentoo_Bot = GentooBot("#/g/test", "GentooTestBot", ig_server)
+		Gentoo_Bot = GentooBot("#/g/test", "GentooTestBot", ig_server, reconnection_interval=5)
 	Gentoo_Bot.start()
