@@ -25,12 +25,18 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		"""docstring for on_welcome"""
 		c.join(self.channel)
 
-	def on_pubmsg(self, c, e):
-		"""docstring for on_pubmsg"""
+	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
 		nick = e.source.split('!', 1)[0]
-		if 'windows' in msg:
-			c.privmsg(self.channel, "%s: Install Gentoo" % nick)
+		ig_keywords = ('windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd')
+		for keyword in ig_keywords:
+			if keyword in msg:
+				c.privmsg(self.channel, "%s: Install Gentoo." % nick)
+				break
+
+	def on_pubmsg(self, c, e):
+		"""docstring for on_pubmsg"""
+		self.installgentoo_reply(c, e)
 
 if __name__ == '__main__':
 	Gentoo_Bot = GentooBot("#/g/test", "GentooBot", ig_server)
