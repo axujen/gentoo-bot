@@ -40,9 +40,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
 				'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd', 'minix',
 				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
-				'Wangblows')
+				'Wangblows', "linux", "lunix")
 		for keyword in ig_keywords:
-			if keyword.lower() in msg.lower():
+			# if keyword.lower() in msg.lower():
+			if re.search(r"\b(%s)\b" % keyword, msg, re.I):
 				c.privmsg(self.channel, "%s: Install Gentoo." % nick)
 				break
 
