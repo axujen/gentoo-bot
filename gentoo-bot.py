@@ -15,6 +15,7 @@
 
 import sys, re
 from urllib.request import urlopen
+from urllib.error import *
 import irc.bot
 ig_server = irc.bot.ServerSpec('irc.installgentoo.com')
 
@@ -42,12 +43,19 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		url_pattern = re.compile("(https?|ftp)://[^\s/$.?#].[^\s]*")
 		if re.match(url_pattern, msg):
 			url = re.match(url_pattern, msg).group(0)
-			page = urlopen(url)
+			try:
+				page = urlopen(url)
+			except HTTPError as e:
+				c.privmsg(self.channel, "HTTP Error %d" % e.code)
+				return
+			except URLError as e:
+				c.privmsg(self.channel, "Failed to reach server, reason %s." % e.reason)
+				return
 			page_html = page.readlines()
 			for line in page_html:
 				if re.findall("<title>(.*)</title>", line.decode()):
 					title = re.findall('<title>(.*)</title>', line.decode())[0]
-			c.privmsg(self.channel, "Page title: %s" % title)
+			c.privmsg(self.channel, "Page title: %s <%s>" % (title, url))
 
 
 	def on_pubmsg(self, c, e):
