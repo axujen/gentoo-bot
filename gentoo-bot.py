@@ -46,10 +46,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			try:
 				page = urlopen(url)
 			except HTTPError as e:
-				c.privmsg(self.channel, "HTTP Error %d" % e.code)
+				c.privmsg(self.channel, "HTTP Error %d <%s>" % (e.code, url))
 				return
 			except URLError as e:
-				c.privmsg(self.channel, "Failed to reach server, reason %s." % e.reason)
+				c.privmsg(self.channel, "Failed to reach server, reason %s <%s>." % (e.reason, url))
 				return
 			page_html = page.readlines()
 			for line in page_html:
