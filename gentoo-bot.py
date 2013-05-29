@@ -31,7 +31,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
 		nick = e.source.split('!', 1)[0]
-		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian', 'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd')
+		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
+				'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd', 'minix',
+				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
+				'Wangblows')
 		for keyword in ig_keywords:
 			if keyword.lower() in msg.lower():
 				c.privmsg(self.channel, "%s: Install Gentoo." % nick)
@@ -55,7 +58,9 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			for line in page_html:
 				if re.findall("<title>(.*)</title>", line.decode()):
 					title = re.findall('<title>(.*)</title>', line.decode())[0]
-			c.privmsg(self.channel, "Page title: %s <%s>" % (title, url))
+					c.privmsg(self.channel, "Page title: %s <%s>" % (title, url))
+					return
+			c.privmsg(self.channel, "No title found for %s." % url)
 
 
 	def on_pubmsg(self, c, e):
