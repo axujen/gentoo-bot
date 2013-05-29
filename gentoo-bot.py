@@ -17,6 +17,8 @@ import sys, re
 from urllib.request import urlopen
 from urllib.error import *
 from time import sleep
+
+import pylast
 import irc.bot
 ig_server = irc.bot.ServerSpec('irc.installgentoo.com')
 
@@ -38,6 +40,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		"""docstring for on_pubmsg"""
 		self.installgentoo_reply(c, e)
 		self.resolve_url(c, e)
+		self.last_fm(c, e)
 
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
@@ -84,11 +87,32 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				return
 			self.say(c, "No title found for %s." % url)
 
+	def last_fm(self, c, e):
+		"""Last fm commands"""
+		msg = e.arguments[0]
+		if not msg.startswith(":"):
+			return
+		if msg.startswith(":compare"):
+			args = msg.split()[1:]
+			try:
+				first_user = last.get_user(args[0])
+				rating = int(float(first_user.compare_with_user(args[1])[0])*100)
+			except pylast.WSError as e:
+				self.say(c, e.details)
+				return
+			self.say(c, "Compatibility with %s and %s is %d%%" % (args[0], args[1], rating))
+
 	def say(self, c, message):
 		"""Print message in the channel"""
 		c.privmsg(self.channel, message)
 
 if __name__ == '__main__':
+	with open("last.fm", 'rt') as f:
+		api_pub = f.readline()[:-1]
+		api_secret = f.readline()[:-1]
+
+	last = pylast.LastFMNetwork(api_key = api_pub, api_secret = api_secret)
+
 	try:
 		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server)
 	except IndexError:
