@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import sys, re
+from urllib.request import urlopen
 import irc.bot
 ig_server = irc.bot.ServerSpec('irc.installgentoo.com')
 
@@ -35,13 +36,29 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				c.privmsg(self.channel, "%s: Install Gentoo." % nick)
 				break
 
+	def resolve_url(self, c, e):
+		"""if found, resolve the title of a url in the message."""
+		msg = e.arguments[0]
+		url_pattern = re.compile("(https?|ftp)://[^\s/$.?#].[^\s]*")
+		if re.match(url_pattern, msg):
+			url = re.match(url_pattern, msg).group(0)
+			c.privmsg(self.channel, url)
+			page = urlopen(url)
+			page_html = page.readlines()
+			for line in page_html:
+				if re.findall("<title>(.*)</title>", line.decode(encoding='utf-8')):
+					title = re.findall('<title>(.*)</title>', line.decode(encoding='utf-8'))[0]
+			c.privmsg(self.channel, "Page title: %s" % title)
+
+
 	def on_pubmsg(self, c, e):
 		"""docstring for on_pubmsg"""
 		self.installgentoo_reply(c, e)
+		self.resolve_url(c, e)
 
 if __name__ == '__main__':
 	try:
 		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server)
 	except IndexError:
-		Gentoo_Bot = GentooBot("#/g/test", "GentooBot", ig_server)
+		Gentoo_Bot = GentooBot("#/g/test", "GentooTestBot", ig_server)
 	Gentoo_Bot.start()
