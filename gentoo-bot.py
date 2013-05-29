@@ -34,6 +34,16 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		"""docstring for on_welcome"""
 		c.join(self.channel)
 
+	def on_pubmsg(self, c, e):
+		"""docstring for on_pubmsg"""
+		self.installgentoo_reply(c, e)
+		self.resolve_url(c, e)
+
+	def on_kick(self, c, e):
+		"""autorejoin when kicked."""
+		sleep(self.reconnect)
+		c.join(self.channel)
+
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
 		nick = e.source.split('!', 1)[0]
@@ -44,7 +54,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		for keyword in ig_keywords:
 			# if keyword.lower() in msg.lower():
 			if re.search(r"\b(%s)\b" % keyword, msg, re.I):
-				c.privmsg(self.channel, "%s: Install Gentoo." % nick)
+				self.say(c, "%s: Install Gentoo." % nick)
 				break
 
 	def resolve_url(self, c, e):
@@ -57,10 +67,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			try:
 				page = urlopen(url)
 			except HTTPError as e:
-				c.privmsg(self.channel, "HTTP Error %d <%s>" % (e.code, url))
+				self.say(c, "HTTP Error %d <%s>" % (e.code, url))
 				return
 			except URLError as e:
-				c.privmsg(self.channel, "Failed to reach server, reason %s <%s>." % (e.reason, url))
+				self.say(c, "Failed to reach server, reason %s <%s>." % (e.reason, url))
 				return
 			except ValueError:
 				try:
@@ -68,21 +78,15 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				except:
 					return
 			page_html = page.readall().decode()
-			if re.findall("<title>(.*)</title>", page_html):
-				title = re.findall('<title>(.*)</title>', page_html)[0]
-				c.privmsg(self.channel, "Page title: %s <%s>" % (title, url))
+			if re.findall(r"<title>(.*)</title>", page_html):
+				title = re.findall(r"<title>(.*)</title>", page_html)[0]
+				self.say(c, "Page title: %s <%s>" % (title, url))
 				return
-			c.privmsg(self.channel, "No title found for %s." % url)
+			self.say(c, "No title found for %s." % url)
 
-	def on_pubmsg(self, c, e):
-		"""docstring for on_pubmsg"""
-		self.installgentoo_reply(c, e)
-		self.resolve_url(c, e)
-
-	def on_kick(self, c, e):
-		"""autorejoin when kicked."""
-		sleep(self.reconnect)
-		c.join(self.channel)
+	def say(self, c, message):
+		"""Print message in the channel"""
+		c.privmsg(self.channel, message)
 
 if __name__ == '__main__':
 	try:
