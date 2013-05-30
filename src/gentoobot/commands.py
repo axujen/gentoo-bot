@@ -28,10 +28,11 @@ class commands(object):
 		self.lastfm = LastFMNetwork(api_key = last_opt['api_pub'],
 				api_secret = last_opt['api_secret'])
 
-	def add_command(self, command, method, help):
+	def add_command(self, command, help):
 		"""docstring for add_command"""
-		self.parser.add_argument(command, help=help, dest=method, nargs=REMAINDER)
-		self.commands[method] = (command, help)
+		self.parser.add_argument(command, help=help, dest=command[1:],
+				nargs=REMAINDER)
+		self.commands[command[1:]] = (help)
 
 	def _parse_commands(self, message):
 		"""docstring for parse_commands"""
@@ -39,7 +40,8 @@ class commands(object):
 		for cmd in cmds:
 			if not cmds[cmd] == None:
 				return cmd, cmds[cmd]
-		else: return None
+		else:
+			raise ValueError
 
 	def do_command(self, message):
 		"""docstring for do_command"""
@@ -47,38 +49,36 @@ class commands(object):
 			command, arguments = self._parse_commands(message)
 		except ValueError:
 			return
-		except TypeError:
-			return
 
-		for method in self.commands:
-			if command == method:
-				return self._execute(method, arguments)
+		for cmd in self.commands:
+			if command == cmd:
+				return self._execute(cmd, arguments)
 		raise ValueError('Unknown command %s' % command)
 
-	def _execute(self, method, arguments):
+	def _execute(self, command, arguments):
 		"""docstring for execute"""
 		try:
-			return getattr(self, 'do_'+method)(arguments)
+			return getattr(self, 'do_'+command)(arguments)
 		except AttributeError:
-			return 'No method defined for %s yet.' % method
+			return 'No method defined for %s yet.' % command
 
 	def do_help(self, arguments):
 		"""docstring for do_help"""
 		if not arguments:
-			cmds = ', '.join([self.commands[cmd][0] for cmd in self.commands])
-			return 'Available commands are: %s.' % cmds
+			cmds = ', '.join([':'+cmd for cmd in self.commands.keys()])
+			return 'Available commands are: %s.\nTry :help command for command'\
+					' specific help.' % cmds
 		else:
-			command = arguments[0]
-			for method in self.commands:
-				cmd = self.commands[method][0]
+			cmd = arguments[0]
+			for command in self.commands:
 				if command in (cmd, cmd[1:]):
-					return self.commands[method][1]
-			return "Command %s not found!" % command
+					return self.commands[command]
+			return "Command %s not found!" % cmd
 
 class user_commands(commands):
 	def __init__(self):
 		super().__init__()
-		self.add_command(':help', 'help', 'Show this help message.')
+		self.add_command(':help', 'Show this help message.')
 
 	def do_compare(self, arguments):
 		"""Compare 2 lastfm users."""
@@ -101,7 +101,7 @@ class user_commands(commands):
 		return("Compatibility between %s and %s is %d%%! Common artists are: %s."\
 					% (user1, user2, common_artists))
 
-	def do_nowplaying(self, arguments):
+	def do_np(self, arguments):
 		"""Playing current or last playing song by the user."""
 		if not arguments:
 			return "Not enough arguments!"
@@ -119,9 +119,12 @@ class user_commands(commands):
 		return "This command is not implemented yet."
 
 commands = user_commands()
-commands.add_command(':np', 'nowplaying', ':np\nThis command will show the '\
-		'current song playing in your lastfm profile')
-commands.add_command(':compare', 'compare', ':compare `user1` `user2`\nThis '\
-		"command will compare user1 to user2's lastfm profile")
-commands.add_command(':fm_regiser', 'fm_register', 'usage: :fm_register `lastfm username`'\
-		'\nThis command will associate your current nick with a lastfm username.')
+commands.add_command(':np', ':np\nThis command will show the current song '\
+		'playing in your lastfm profile')
+commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
+		"compare user1 to user2's lastfm profile")
+commands.add_command(':fm_regiser', 'usage: :fm_register `lastfm username`\n'\
+		'This command will associate your current nick with a lastfm username.')
+print(commands.do_command(":help"))
+print(commands.do_command(":help np"))
+print(commands.do_command(":help :np"))
