@@ -16,6 +16,7 @@
 import sys, re
 from urllib.request import urlopen
 from urllib.error import *
+from html.parser import HTMLParser
 from time import sleep
 
 import pylast
@@ -82,7 +83,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 					return
 			page_html = page.readall().decode()
 			if re.findall(r"<title>(.*)</title>", page_html):
-				title = re.findall(r"<title>(.*)</title>", page_html)[0]
+				title = HTMLParser().unescape(re.findall(r"<title>(.*)</title>", page_html)[0])
 				self.say(c, "Page title: %s" % title)
 				return
 			self.say(c, "No title found for %s." % url)
