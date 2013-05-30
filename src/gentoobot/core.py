@@ -110,21 +110,20 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		"""Print message in the channel"""
 		c.privmsg(self.channel, message)
 
-arguments = ArgumentParser()
-arguments.add_argument('-s', '--server', default='irc.installgentoo.com',
-		help='irc server to connect to.', metavar='server', dest='server')
-arguments.add_argument('-p', '--port', default=6667, help='server port.',
-		dest='port', metavar='port')
-arguments.add_argument('-n', '--nick', default='GentooTestBot', help="bot's name.",
-		dest='nick', metavar='nick')
-arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
-		help='channel to connect to.', dest='channel')
-
 def main():
+	# command line args
+	arguments = ArgumentParser()
+	arguments.add_argument('-s', '--server', default='irc.installgentoo.com',
+			help='irc server to connect to.', metavar='server', dest='server')
+	arguments.add_argument('-p', '--port', default=6667, help='server port.',
+			dest='port', metavar='port')
+	arguments.add_argument('-n', '--nick', default='GentooTestBot', help="bot's name.",
+			dest='nick', metavar='nick')
+	arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
+			help='channel to connect to.', dest='channel')
 	args = arguments.parse_args()
 
 	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=args.port)
-
 	try:
 		Gentoo_Bot.start()
 	except Exception as e:
