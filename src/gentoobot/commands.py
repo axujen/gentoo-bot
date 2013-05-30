@@ -102,13 +102,11 @@ class commands(object):
 		if not arguments:
 			cmds = ', '.join([self.commands[cmd][0] for cmd in self.commands])
 			return 'Available commands are: %s.' % cmds
-		elif arguments[0].startswith(":"):
-			return "Try without the : prefix you dumb cunt."
 		else:
 			command = arguments[0]
 			for method in self.commands:
-				cmd = self.commands[method][0][1:]
-				if command == cmd:
+				cmd = self.commands[method][0]
+				if command in (cmd, cmd[1:]):
 					return self.commands[method][1]
 			return "Command %s not found!" % command
 
