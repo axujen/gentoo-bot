@@ -19,9 +19,9 @@ from urllib.request import urlopen
 from urllib.error import *
 from html.parser import HTMLParser
 from time import sleep
-from argparse import ArgumentParser, REMAINDER
+from argparse import ArgumentParser
 
-import pylast
+import gentoobot.commands as cmd
 import irc.bot
 
 class GentooBot(irc.bot.SingleServerIRCBot):
@@ -34,19 +34,6 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.nickname = nickname
 		self.server = server
 		self.port = port
-
-		# User arguments.
-		self.cmd = ArgumentParser(description="GentooBot is an annoying bot "\
-				"designed to spam install gentoo on users, all other features "\
-				"are simply there to keep people from ignoring the bot.\n"\
-				"Made by axujen <https://github.com/axujen/gentoo-bot>",
-				add_help=False, prefix_chars=":")
-		self.cmd.add_argument(":np", ":nowplaying", metavar="user", dest="np",
-				nargs=REMAINDER,
-				help="display current or last played song by `user`.")
-		self.cmd.add_argument(":compare", metavar="user1 user2", dest="compare",
-				nargs=REMAINDER,
-				help="compare `user1` and `user2` lastfm profiles.")
 
 	def on_welcome(self, c, e):
 		c.join(self.channel)
@@ -64,7 +51,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
-		nick = e.source.split('!', 1)[0]
+		nick = e.source.nick
 		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
 				'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd', 'minix',
 				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
@@ -105,47 +92,19 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def do_command(self, c, e):
 		"""Handler for user commands."""
 		try:
-			cmds = self.cmds.parse_args(e.arguments[0])
+			args = cmd.parse_args(e.arguments[0])
 		except SystemExit: # SystemExit means no args we found.
 			return
-		if cmds.np:
-			self.lastfm_np(c, cmds.np[0])
+		if args.np:
+			self.say(c, cmd.lastfm_np(cmds.np[0]))
 			return
 		if cmds.compare:
 			try:
-				self.lastfm_compare(c, cmds.compare[0], cmds,compare[1])
+				self.say(c, cmd.lastfm_compare(cmds.compare[0], cmds,compare[1]))
 				return
 			except IndexError:
 				self.say(c, "Not enough arguments!")
 				return
-
-
-	def lastfm_compare(self, c, user1, user2):
-		"""Compare 2 lastfm users."""
-		try:
-			comparer = last.get_user(user1)
-			compare = comparer.compare_with_user(user2)
-		except WSError as e:
-			self.say(c, e.reason)
-			return
-		rating = int(compare[0])*100
-		try:
-			common_artists = ', '.join([artist.name for artist in compare[1]])
-		except IndexError:
-			common_artists = 'None!'
-
-		self.say(c, "Compatibility between %s and %s is %d%%! Common artists are: %s."\
-					% (user1, user2, common_artists))
-
-	def lastfm_np(self, c, user):
-		"""Playing current or last playing song by the user."""
-		user = last.get_user(user)
-		np = user.get_now_playing()
-		if not np:
-			last_song = user.get_recent_tracks(2)[0]
-			self.say(c, "%s last played: %s" % (user, last_song))
-		else:
-			self.say(c, "%s is playing: %s" % (user, np))
 
 	def say(self, c, message):
 		"""Print message in the channel"""
@@ -163,11 +122,6 @@ arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
 
 def main():
 	args = arguments.parse_args()
-
-	import gentoobot.config
-	lastfm = gentoobot.config.lastfm
-	last = pylast.LastFMNetwork(api_key = lastfm['api_pub'],
-			api_secret = lastfm['api_secret'])
 
 	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=args.port)
 
