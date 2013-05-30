@@ -19,9 +19,9 @@ from urllib.request import urlopen
 from urllib.error import *
 from html.parser import HTMLParser
 from time import sleep
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-import gentoobot.commands as cmd
+from gentoobot.commands import commands
 import gentoobot.config as config
 import irc.bot
 
@@ -92,20 +92,9 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def do_command(self, c, e):
 		"""Handler for user commands."""
-		try:
-			args = cmd.parse_args(e.arguments[0])
-		except SystemExit: # SystemExit means no args we found.
-			return
-		if args.np:
-			self.say(c, cmd.lastfm_np(cmds.np[0]))
-			return
-		if cmds.compare:
-			try:
-				self.say(c, cmd.lastfm_compare(cmds.compare[0], cmds,compare[1]))
-				return
-			except IndexError:
-				self.say(c, "Not enough arguments!")
-				return
+		msg = commands.do_command(e.arguments[0])
+		if msg:
+			self.say(c, msg)
 
 	def say(self, c, message):
 		"""Print message in the channel"""
@@ -115,7 +104,7 @@ def main():
 	# Get connection options written in config file.
 	opt = config.get_conf('connection')
 	# command line args
-	arguments = ArgumentParser()
+	arguments = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 	arguments.add_argument('-s', '--server', default=opt['server'],
 			help='irc server to connect to.', metavar='server', dest='server')
 	arguments.add_argument('-p', '--port', default=opt['port'], dest='port',

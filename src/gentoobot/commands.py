@@ -19,45 +19,99 @@ from pylast import LastFMNetwork
 import gentoobot.config
 
 # Lastfm instance
-last_opt = gentoobot.config.get_conf('lastfm')
-lastfm = LastFMNetwork(api_key = last_opt['api_pub'], api_secret = last_opt['api_secret'])
+# last_opt = gentoobot.config.get_conf('lastfm')
+# lastfm = LastFMNetwork(api_key = last_opt['api_pub'], api_secret = last_opt['api_secret'])
 
-# User arguments.
-commands = ArgumentParser(description="GentooBot is an annoying bot "\
-		"designed to spam install gentoo on users, all other features "\
-		"are simply there to keep people from ignoring the bot.\n"\
-		"Made by axujen <https://github.com/axujen/gentoo-bot>",
-		add_help=False, prefix_chars=":")
-commands.add_argument(":np", ":nowplaying", metavar="user", dest="np",
-		nargs=REMAINDER,
-		help="display current or last played song by `user`.")
-commands.add_argument(":compare", metavar="user1 user2", dest="compare",
-		nargs=REMAINDER,
-		help="compare `user1` and `user2` lastfm profiles.")
+class commands(object):
+	"""docstring for command"""
+	def __init__(self):
+		self.parser = ArgumentParser(prefix_chars=':', add_help=False)
+		self.commands = {}
+		self.add_command(':help', 'help', 'show this help message')
 
-def lastfm_compare(user1, user2):
-	"""Compare 2 lastfm users."""
-	try:
-		comparer = lastfm.get_user(user1)
-		compare = comparer.compare_with_user(user2)
-	except WSError as e:
-		return(e.reason)
-		return
-	rating = int(compare[0])*100
-	try:
-		common_artists = ', '.join([artist.name for artist in compare[1]])
-	except IndexError:
-		common_artists = 'None!'
+	def add_command(self, command, method, help):
+		"""docstring for add_command"""
+		self.parser.add_argument(command, help=help, dest=method, nargs=REMAINDER)
+		self.commands[method] = (command, help)
 
-	return("Compatibility between %s and %s is %d%%! Common artists are: %s."\
-				% (user1, user2, common_artists))
+	def parse_commands(self, message):
+		"""docstring for parse_commands"""
+		cmds = vars(self.parser.parse_known_args(message.split())[0])
+		for cmd in cmds:
+			if not cmds[cmd] == None:
+				return cmd, cmds[cmd]
+		else: return None
 
-def lastfm_np(user):
-	"""Playing current or last playing song by the user."""
-	user = lastfm.get_user(user)
-	np = user.get_now_playing()
-	if not np:
-		last_song = user.get_recent_tracks(2)[0]
-		return("%s last played: %s" % (user, last_song))
-	else:
-		return("%s is playing: %s" % (user, np))
+	def do_command(self, message):
+		"""docstring for do_command"""
+		try:
+			command, arguments = self.parse_commands(message)
+		except ValueError:
+			return
+		except TypeError:
+			return
+
+		for method in self.commands:
+			if command == method:
+				return self.execute(method, arguments)
+		raise ValueError('Unknown command %s' % command)
+
+	def execute(self, method, arguments):
+		"""docstring for execute"""
+		try:
+			return getattr(self, 'do_'+method)(arguments)
+		except AttributeError:
+			return 'No method defined for %s yet.' % method
+
+	def do_compare(self, arguments):
+		"""Compare 2 lastfm users."""
+		if len(arguments) < 2:
+			return 'Not enough arguments!'
+		user1 = arguments[0]
+		user2 = arguments[1]
+		try:
+			comparer = lastfm.get_user(user1)
+			compare = comparer.compare_with_user(user2)
+		except WSError as e:
+			return(e.reason)
+			return
+		rating = int(compare[0])*100
+		try:
+			common_artists = ', '.join([artist.name for artist in compare[1]])
+		except IndexError:
+			common_artists = 'None!'
+
+		return("Compatibility between %s and %s is %d%%! Common artists are: %s."\
+					% (user1, user2, common_artists))
+
+	def do_nowplaying(self, arguments):
+		"""Playing current or last playing song by the user."""
+		if not arguments:
+			return "Not enough arguments!"
+
+		user = lastfm.get_user(arguments[0])
+		np = user.get_now_playing()
+		if not np:
+			last_song = user.get_recent_tracks(2)[0]
+			return("%s last played: %s" % (user, last_song))
+		else:
+			return("%s is playing: %s" % (user, np))
+
+	def do_help(self, arguments):
+		"""docstring for do_help"""
+		if not arguments:
+			cmds = ', '.join([self.commands[cmd][0] for cmd in self.commands])
+			return 'Available commands are: %s.' % cmds
+		elif arguments[0].startswith(":"):
+			return "Try without the : prefix you dumb cunt."
+		else:
+			command = arguments[0]
+			for method in self.commands:
+				cmd = self.commands[method][0][1:]
+				if command == cmd:
+					return self.commands[method][1]
+			return "Command %s not found!" % command
+
+commands = command()
+commands.add_command(':np', 'nowplaying', 'Show the current playing song in lastfm')
+commands.add_command(':compare', 'compare', 'Compare 2 lastfm profiles')
