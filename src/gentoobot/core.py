@@ -22,6 +22,7 @@ from time import sleep
 from argparse import ArgumentParser
 
 import gentoobot.commands as cmd
+import gentoobot.config as config
 import irc.bot
 
 class GentooBot(irc.bot.SingleServerIRCBot):
@@ -111,16 +112,18 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		c.privmsg(self.channel, message)
 
 def main():
+	# Get connection options written in config file.
+	opt = config.get_conf('connection')
 	# command line args
 	arguments = ArgumentParser()
-	arguments.add_argument('-s', '--server', default='irc.installgentoo.com',
+	arguments.add_argument('-s', '--server', default=opt['server'],
 			help='irc server to connect to.', metavar='server', dest='server')
-	arguments.add_argument('-p', '--port', default=6667, help='server port.',
-			dest='port', metavar='port')
-	arguments.add_argument('-n', '--nick', default='GentooTestBot', help="bot's name.",
-			dest='nick', metavar='nick')
-	arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
-			help='channel to connect to.', dest='channel')
+	arguments.add_argument('-p', '--port', default=opt['port'], dest='port',
+			help='server port.', metavar='port')
+	arguments.add_argument('-n', '--nick', default=opt['nick'], dest='nick',
+			help="bot's name.", metavar='nick')
+	arguments.add_argument('-c', '--channel', default=opt['channel'],
+			metavar='channel',	help='channel to connect to.', dest='channel')
 	args = arguments.parse_args()
 
 	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=args.port)

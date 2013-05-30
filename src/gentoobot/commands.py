@@ -19,7 +19,7 @@ from pylast import LastFMNetwork
 import gentoobot.config
 
 # Lastfm instance
-last_opt = gentoobot.config.get_lastfm()
+last_opt = gentoobot.config.get_conf('lastfm')
 lastfm = LastFMNetwork(api_key = last_opt['api_pub'], api_secret = last_opt['api_secret'])
 
 # User arguments.

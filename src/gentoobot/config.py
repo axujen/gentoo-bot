@@ -24,7 +24,7 @@ config_folder = os.path.expanduser(
 		os.path.expandvars(
 			os.path.normpath(config_folder)))
 
-options = os.path.join(config_folder, 'options.rc')
+configrc = os.path.join(config_folder, 'config')
 config = ConfigParser()
 
 # If the config dir doesn't exist make it.
@@ -34,14 +34,21 @@ if not os.path.exists(config_folder):
 elif not os.path.isdir(config_folder):
 	raise ValueError("Configuration folder must be a folder!")
 
-def get_lastfm():
-	"""Get configuration options for lastfm"""
-	config['LASTFM'] = {
-			'api_pub'	: '1af49b4138e72da18bae9e77f1af46aa',
-			'api_secret': '3421bd09678c3a191310c5433017e4a6',}
-	if os.path.exists(options):
-		config.read(options)
+# Config defaults.
+config['LASTFM'] = {
+		'api_pub'	: '1af49b4138e72da18bae9e77f1af46aa',
+		'api_secret': '3421bd09678c3a191310c5433017e4a6',}
+config['CONNECTION'] = {
+		'server':	'irc.installgentoo',
+		'port'	:	'6667',
+		'nick'	:	'GentooTestBot',
+		'channel':	'#/g/test',}
+
+def get_conf(section):
+	"""General method to read configparser config file."""
+	if os.path.exists(configrc):
+		config.read(configrc)
 	else:
-		with open(options, 'wt') as opt:
-			config.write(opt)
-	return dict(config['LASTFM'])
+		with open(configrc, 'w') as configfile:
+			config.write(configfile)
+	return dict(config[section.upper()])
