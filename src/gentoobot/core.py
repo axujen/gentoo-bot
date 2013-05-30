@@ -18,7 +18,7 @@ from urllib.request import urlopen
 from urllib.error import *
 from html.parser import HTMLParser
 from time import sleep
-from argparse import ArgumentParser
+from argparse import ArgumentParser, REMAINDER
 
 import pylast
 import irc.bot
@@ -34,15 +34,27 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.server = server
 		self.port = port
 
+		# User arguments.
+		self.cmd = ArgumentParser(description="GentooBot is an annoying bot "\
+				"designed to spam install gentoo on users, all other features "\
+				"are simply there to keep people from ignoring the bot.\n"\
+				"Made by axujen <https://github.com/axujen/gentoo-bot>",
+				add_help=False, prefix_chars=":")
+		self.cmd.add_argument(":np", ":nowplaying", metavar="user", dest="np",
+				nargs=REMAINDER,
+				help="display current or last played song by `user`.")
+		self.cmd.add_argument(":compare", metavar="user1 user2", dest="compare",
+				nargs=REMAINDER,
+				help="compare `user1` and `user2` lastfm profiles.")
+
 	def on_welcome(self, c, e):
-		"""docstring for on_welcome"""
 		c.join(self.channel)
+		self.say(c, "Ahoy! im back.")
 
 	def on_pubmsg(self, c, e):
-		"""docstring for on_pubmsg"""
 		self.installgentoo_reply(c, e)
 		self.resolve_url(c, e)
-		self.last_fm(c, e)
+		self.do_command(c, e)
 
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
@@ -89,15 +101,23 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				return
 			self.say(c, "No title found for %s." % url)
 
-	def last_fm(self, c, e):
-		"""Last fm commands"""
-		msg = e.arguments[0]
-		if not msg.startswith(":"):
+	def do_command(self, c, e):
+		"""Handler for user commands."""
+		try:
+			cmds = self.cmds.parse_args(e.arguments[0])
+		except SystemExit: # SystemExit means no args we found.
 			return
-		if msg.startswith(":compare "):
-			pass
-		elif msg.startswith(":np "):
-			pass
+		if cmds.np:
+			self.lastfm_np(c, cmds.np[0])
+			return
+		if cmds.compare:
+			try:
+				self.lastfm_compare(c, cmds.compare[0], cmds,compare[1])
+				return
+			except IndexError:
+				self.say(c, "Not enough arguments!")
+				return
+
 
 	def lastfm_compare(self, c, user1, user2):
 		"""Compare 2 lastfm users."""
@@ -116,7 +136,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.say(c, "Compatibility between %s and %s is %d%%! Common artists are: %s."\
 					% (user1, user2, common_artists))
 
-	def last_fm_np(self, c, user):
+	def lastfm_np(self, c, user):
 		"""Playing current or last playing song by the user."""
 		user = last.get_user(user)
 		np = user.get_now_playing()
