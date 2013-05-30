@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 # © Copyright 2013 axujen, <axujen at gmail.com>. All Rights Reserved.
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
+import re, sys
 from urllib.request import urlopen
 from urllib.error import *
 from html.parser import HTMLParser
@@ -163,10 +164,22 @@ arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
 def main():
 	args = arguments.parse_args()
 
-	with open("last.fm", 'rt') as f:
-		api_pub = f.readline()[:-1]
-		api_secret = f.readline()[:-1]
+	import gentoobot.config
+	lastfm = gentoobot.config.lastfm
+	last = pylast.LastFMNetwork(api_key = lastfm['api_pub'],
+			api_secret = lastfm['api_secret'])
 
-	last = pylast.LastFMNetwork(api_key = api_pub, api_secret = api_secret)
 	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=args.port)
-	Gentoo_Bot.start()
+
+	try:
+		Gentoo_Bot.start()
+	except Exception as e:
+		# Log errors.
+		with open('/tmp/gentoobot_error.log', 'a') as error_log:
+			e_name = re.findall(r"<class '(.*)'>", str(e.__class__))[0]
+			e_len = len(e_name)
+			error_log.write('-'*e_len)
+			error_log.write(e_name)
+			error_log.write('-'*e_name)
+			error_log.write(sys.exc_info()[2])
+		sys.exit()
