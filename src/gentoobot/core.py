@@ -21,9 +21,10 @@ from html.parser import HTMLParser
 from time import sleep
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-from gentoobot.commands import commands
-import gentoobot.config as config
 import irc.bot
+
+from commands import commands
+import config
 
 class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self, channel, nickname, server, port=6667, reconnect=5):
