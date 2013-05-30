@@ -16,6 +16,7 @@
 from configparser import ConfigParser
 import os.path
 from os import mkdir
+
 config_folder = "$HOME/.gentoobot/"
 
 # Is there a simpler way?
@@ -23,21 +24,24 @@ config_folder = os.path.expanduser(
 		os.path.expandvars(
 			os.path.normpath(config_folder)))
 
+options = os.path.join(config_folder, 'options.rc')
 config = ConfigParser()
-config['LASTFM'] = {'api_pub' : '1af49b4138e72da18bae9e77f1af46aa',
-					'api_secret' : '3421bd09678c3a191310c5433017e4a6',}
 
-if os.path.exists(config_folder):
-	if not os.path.isdir(config_folder):
-		raise ValueError("configuration folder my be a folder!")
-else:
+# If the config dir doesn't exist make it.
+if not os.path.exists(config_folder):
 	mkdir(config_folder)
+# If its not a folder raise an error.
+elif not os.path.isdir(config_folder):
+	raise ValueError("Configuration folder must be a folder!")
 
-options = os.path.join(config_folder, "options.rc")
-if os.path.exists(options):
-	config.read(options)
-else:
-	with open(options, 'wt') as opt:
-		config.write(opt)
-
-lastfm = dict(config['LASTFM'])
+def get_lastfm():
+	"""Get configuration options for lastfm"""
+	config['LASTFM'] = {
+			'api_pub'	: '1af49b4138e72da18bae9e77f1af46aa',
+			'api_secret': '3421bd09678c3a191310c5433017e4a6',}
+	if os.path.exists(options):
+		config.read(options)
+	else:
+		with open(options, 'wt') as opt:
+			config.write(opt)
+	return dict(config['LASTFM'])

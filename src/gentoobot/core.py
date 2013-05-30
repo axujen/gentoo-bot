@@ -26,8 +26,8 @@ import irc.bot
 
 class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self, channel, nickname, server, port=6667, reconnect=5):
-		server_conn = irc.bot.ServerSpec(server, port)
-		irc.bot.SingleServerIRCBot.__init__(self, [server_conn], nickname, nickname,
+		server_spec = irc.bot.ServerSpec(server, port)
+		irc.bot.SingleServerIRCBot.__init__(self, [server_spec], nickname, nickname,
 				reconnection_interval=reconnect)
 		self.channel = channel
 		self.reconnect = reconnect
@@ -129,10 +129,5 @@ def main():
 	except Exception as e:
 		# Log errors.
 		with open('/tmp/gentoobot_error.log', 'a') as error_log:
-			e_name = re.findall(r"<class '(.*)'>", str(e.__class__))[0]
-			e_len = len(e_name)
-			error_log.write('-'*e_len)
-			error_log.write(e_name)
-			error_log.write('-'*e_name)
 			error_log.write(sys.exc_info()[2])
-		sys.exit()
+		sys.exit(sys.exc_info()[2])

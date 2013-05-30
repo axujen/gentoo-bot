@@ -16,10 +16,11 @@
 from argparse import ArgumentParser, REMAINDER
 
 from pylast import LastFMNetwork
-from gentoobot.config import lastfm
+import gentoobot.config
 
 # Lastfm instance
-last = LastFMNetwork(api_key = lastfm['api_pub'], api_secret = lastfm['api_secret'])
+last_opt = gentoobot.config.get_lastfm()
+lastfm = LastFMNetwork(api_key = last_opt['api_pub'], api_secret = last_opt['api_secret'])
 
 # User arguments.
 commands = ArgumentParser(description="GentooBot is an annoying bot "\
@@ -37,7 +38,7 @@ commands.add_argument(":compare", metavar="user1 user2", dest="compare",
 def lastfm_compare(user1, user2):
 	"""Compare 2 lastfm users."""
 	try:
-		comparer = last.get_user(user1)
+		comparer = lastfm.get_user(user1)
 		compare = comparer.compare_with_user(user2)
 	except WSError as e:
 		return(e.reason)
@@ -53,7 +54,7 @@ def lastfm_compare(user1, user2):
 
 def lastfm_np(user):
 	"""Playing current or last playing song by the user."""
-	user = last.get_user(user)
+	user = lastfm.get_user(user)
 	np = user.get_now_playing()
 	if not np:
 		last_song = user.get_recent_tracks(2)[0]
