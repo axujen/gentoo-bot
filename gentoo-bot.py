@@ -25,7 +25,8 @@ import irc.bot
 
 class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self, channel, nickname, server, port=6667, reconnect=5):
-		irc.bot.SingleServerIRCBot.__init__(self, [server, port], nickname, nickname,
+		server_conn = irc.bot.ServerSpec(server, port)
+		irc.bot.SingleServerIRCBot.__init__(self, [server_conn], nickname, nickname,
 				reconnection_interval=reconnect)
 		self.channel = channel
 		self.reconnect = reconnect
@@ -93,7 +94,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		msg = e.arguments[0]
 		if not msg.startswith(":"):
 			return
-		if msg.startswith(":compare"):
+		if msg.startswith(":compare "):
 			args = msg.split()[1:]
 			try:
 				first_user = last.get_user(args[0])
@@ -120,6 +121,18 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				self.say(c, "Compatibility with %s and %s is %d%%. Common artists include: %s" % (args[0], args[1], rating, ', '.join(artists)))
 			else:
 				self.say(c, "Compatibility with %s and %s is %d%%." %  (args[0], args[1], rating))
+		elif msg.startswith(":np "):
+			try:
+				user = msg.split()[1]
+			except IndexError:
+				user = e.source.split('!', 1)[0]
+			user = last.get_user(user)
+			last_song = user.get_now_playing()
+			if not last_song:
+				last_song = user.get_recent_tracks(2)[0]
+				# need to to give a different message.
+			self.say(c, "%s now playing: %s by %s from %s" % (user,
+				last_song.title, last_song.artist.name, last_song.get_album().title))
 
 	def say(self, c, message):
 		"""Print message in the channel"""
@@ -130,7 +143,7 @@ arguments.add_argument('-s', '--server', default='irc.installgentoo.com',
 		help='irc server to connect to.', metavar='server', dest='server')
 arguments.add_argument('-p', '--port', default=6667, help='server port.',
 		dest='port', metavar='port')
-arguments.add_argument('-n', '--nick', default='GentooBot', help="bot's name.",
+arguments.add_argument('-n', '--nick', default='GentooTestBot', help="bot's name.",
 		dest='nick', metavar='nick')
 arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
 		help='channel to connect to.', dest='channel')
@@ -141,5 +154,5 @@ if __name__ == '__main__':
 		api_pub = f.readline()[:-1]
 		api_secret = f.readline()[:-1]
 	last = pylast.LastFMNetwork(api_key = api_pub, api_secret = api_secret)
-	Gentoo_Bot = GentooBot(args.channel, args.nick, args.server, args.port)
+	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=args.port)
 	Gentoo_Bot.start()
