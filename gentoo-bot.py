@@ -96,13 +96,30 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			args = msg.split()[1:]
 			try:
 				first_user = last.get_user(args[0])
-				rating = int(float(first_user.compare_with_user(args[1])[0])*100)
+				compare = first_user.compare_with_user(args[1])
+				rating = int(float(compare[0])*100)
 			except pylast.WSError as e:
 				self.say(c, e.details)
 				return
 			except IndexError:
 				self.say(c, "Not enough arguments!")
-			self.say(c, "Compatibility with %s and %s is %d%%" % (args[0], args[1], rating))
+			try:
+				common_artists = compare[1]
+			except IndexError:
+				common_artists = None
+				return
+			if common_artists:
+				n = 0
+				artists = []
+				for artist in common_artists:
+					if n >= 4:
+						break
+					n += 1
+					artists.append(artist.name)
+				self.say(c, "Compatibility with %s and %s is %d%%. Common artists include: %s" % (args[0], args[1], rating, ', '.join(artists)))
+			else:
+				self.say(c, "Compatibility with %s and %s is %d%%." %  (args[0], args[1], rating))
+
 
 	def say(self, c, message):
 		"""Print message in the channel"""
