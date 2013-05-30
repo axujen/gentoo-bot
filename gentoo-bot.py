@@ -100,6 +100,8 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			except pylast.WSError as e:
 				self.say(c, e.details)
 				return
+			except IndexError:
+				self.say(c, "Not enough arguments!")
 			self.say(c, "Compatibility with %s and %s is %d%%" % (args[0], args[1], rating))
 
 	def say(self, c, message):
