@@ -92,7 +92,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def do_command(self, c, e):
 		"""Handler for user commands."""
-		msg = commands.do_command(e.arguments[0])
+		msg = commands.exec_command(e.arguments[0])
 		if msg:
 			self.say(c, msg)
 

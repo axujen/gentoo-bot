@@ -28,11 +28,11 @@ class commands(object):
 		self.lastfm = LastFMNetwork(api_key = last_opt['api_pub'],
 				api_secret = last_opt['api_secret'])
 
-	def add_command(self, command, help):
+	def add_command(self, command, help, nargs=0):
 		"""docstring for add_command"""
 		self.parser.add_argument(command, help=help, dest=command[1:],
 				nargs=REMAINDER)
-		self.commands[command[1:]] = (help)
+		self.commands[command[1:]] = (help, nargs)
 
 	def _parse_commands(self, message):
 		"""docstring for parse_commands"""
@@ -43,8 +43,7 @@ class commands(object):
 		else:
 			raise ValueError
 
-	def do_command(self, message):
-		"""docstring for do_command"""
+	def exec_command(self, message):
 		try:
 			command, arguments = self._parse_commands(message)
 		except ValueError:
@@ -57,6 +56,9 @@ class commands(object):
 
 	def _execute(self, command, arguments):
 		"""docstring for execute"""
+		if len(arguments) < self.commands[command][1]:
+			return "Not enough arguments!"
+
 		try:
 			return getattr(self, 'do_'+command)(arguments)
 		except AttributeError:
@@ -72,8 +74,8 @@ class commands(object):
 			cmd = arguments[0]
 			for command in self.commands:
 				if command in (cmd, cmd[1:]):
-					return self.commands[command]
-			return "Command %s not found!" % cmd
+					return self.commands[command][0]
+			return "Unknown command %s!" % cmd
 
 class user_commands(commands):
 	def __init__(self):
@@ -82,8 +84,6 @@ class user_commands(commands):
 
 	def do_compare(self, arguments):
 		"""Compare 2 lastfm users."""
-		if len(arguments) < 2:
-			return 'Not enough arguments!'
 		user1 = arguments[0]
 		user2 = arguments[1]
 		try:
@@ -103,9 +103,6 @@ class user_commands(commands):
 
 	def do_np(self, arguments):
 		"""Playing current or last playing song by the user."""
-		if not arguments:
-			return "Not enough arguments!"
-
 		user = self.lastfm.get_user(arguments[0])
 		np = user.get_now_playing()
 		if not np:
@@ -120,11 +117,13 @@ class user_commands(commands):
 
 commands = user_commands()
 commands.add_command(':np', ':np\nThis command will show the current song '\
-		'playing in your lastfm profile')
+		'playing in your lastfm profile', 1)
 commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
-		"compare user1 to user2's lastfm profile")
+		"compare user1 to user2's lastfm profiles", 2)
 commands.add_command(':fm_regiser', 'usage: :fm_register `lastfm username`\n'\
 		'This command will associate your current nick with a lastfm username.')
-print(commands.do_command(":help"))
-print(commands.do_command(":help np"))
-print(commands.do_command(":help :np"))
+
+print(commands.exec_command(":help"))
+print(commands.exec_command(":help np"))
+print(commands.exec_command(":help :compare"))
+print(commands.exec_command(":help :muh_dik"))
