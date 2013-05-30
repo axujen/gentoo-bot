@@ -13,19 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, re
+import re
 from urllib.request import urlopen
 from urllib.error import *
 from html.parser import HTMLParser
 from time import sleep
+from argparse import ArgumentParser
 
 import pylast
 import irc.bot
-ig_server = irc.bot.ServerSpec('irc.installgentoo.com')
 
 class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self, channel, nickname, server, port=6667, reconnect=5):
-		irc.bot.SingleServerIRCBot.__init__(self, [server], nickname, nickname,
+		irc.bot.SingleServerIRCBot.__init__(self, [server, port], nickname, nickname,
 				reconnection_interval=reconnect)
 		self.channel = channel
 		self.reconnect = reconnect
@@ -64,7 +64,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def resolve_url(self, c, e):
 		"""if found, resolve the title of a url in the message."""
 		msg = e.arguments[0]
-		url_pattern = re.compile("""https?:\/\/w{0,3}\w*?\.(\w*?\.)?\w{2,3}\S*|www\.(\w*?\.)?\w*?\.\w{2,3}\S*|(\w*?\.)?\w*?\.\w{2,3}[\/\?]\S*""")
+		url_pattern = re.compile(r"https?:\/\/w{0,3}\w*?\.(\w*?\.)?\w{2,3}\S*|www\.(\w*?\.)?\w*?\.\w{2,3}\S*|(\w*?\.)?\w*?\.\w{2,3}[\/\?]\S*")
 		if re.match(url_pattern, msg):
 			url = re.match(url_pattern, msg).group(0)
 			print('Found url! %s' % url)
@@ -121,20 +121,25 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			else:
 				self.say(c, "Compatibility with %s and %s is %d%%." %  (args[0], args[1], rating))
 
-
 	def say(self, c, message):
 		"""Print message in the channel"""
 		c.privmsg(self.channel, message)
 
+arguments = ArgumentParser()
+arguments.add_argument('-s', '--server', default='irc.installgentoo.com',
+		help='irc server to connect to.', metavar='server', dest='server')
+arguments.add_argument('-p', '--port', default=6667, help='server port.',
+		dest='port', metavar='port')
+arguments.add_argument('-n', '--nick', default='GentooBot', help="bot's name.",
+		dest='nick', metavar='nick')
+arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
+		help='channel to connect to.', dest='channel')
+
 if __name__ == '__main__':
+	args = arguments.parse_args()
 	with open("last.fm", 'rt') as f:
 		api_pub = f.readline()[:-1]
 		api_secret = f.readline()[:-1]
-
 	last = pylast.LastFMNetwork(api_key = api_pub, api_secret = api_secret)
-
-	try:
-		Gentoo_Bot = GentooBot(sys.argv[1], "GentooBot", ig_server)
-	except IndexError:
-		Gentoo_Bot = GentooBot("#/g/test", "GentooTestBot", ig_server)
+	Gentoo_Bot = GentooBot(args.channel, args.nick, args.server, args.port)
 	Gentoo_Bot.start()
