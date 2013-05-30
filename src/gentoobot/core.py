@@ -95,44 +95,36 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		if not msg.startswith(":"):
 			return
 		if msg.startswith(":compare "):
-			args = msg.split()[1:]
-			try:
-				first_user = last.get_user(args[0])
-				compare = first_user.compare_with_user(args[1])
-				rating = int(float(compare[0])*100)
-			except pylast.WSError as e:
-				self.say(c, e.details)
-				return
-			except IndexError:
-				self.say(c, "Not enough arguments!")
-			try:
-				common_artists = compare[1]
-			except IndexError:
-				common_artists = None
-				return
-			if common_artists:
-				n = 0
-				artists = []
-				for artist in common_artists:
-					if n >= 4:
-						break
-					n += 1
-					artists.append(artist.name)
-				self.say(c, "Compatibility with %s and %s is %d%%. Common artists include: %s" % (args[0], args[1], rating, ', '.join(artists)))
-			else:
-				self.say(c, "Compatibility with %s and %s is %d%%." %  (args[0], args[1], rating))
+			pass
 		elif msg.startswith(":np "):
-			try:
-				user = msg.split()[1]
-			except IndexError:
-				user = e.source.split('!', 1)[0]
-			user = last.get_user(user)
-			last_song = user.get_now_playing()
-			if not last_song:
-				last_song = user.get_recent_tracks(2)[0]
-				# need to to give a different message.
-			self.say(c, "%s now playing: %s by %s from %s" % (user,
-				last_song.title, last_song.artist.name, last_song.get_album().title))
+			pass
+
+	def lastfm_compare(self, c, user1, user2):
+		"""Compare 2 lastfm users."""
+		try:
+			comparer = last.get_user(user1)
+			compare = comparer.compare_with_user(user2)
+		except WSError as e:
+			self.say(c, e.reason)
+			return
+		rating = int(compare[0])*100
+		try:
+			common_artists = ', '.join([artist.name for artist in compare[1]])
+		except IndexError:
+			common_artists = 'None!'
+
+		self.say(c, "Compatibility between %s and %s is %d%%! Common artists are: %s."\
+					% (user1, user2, common_artists))
+
+	def last_fm_np(self, c, user):
+		"""Playing current or last playing song by the user."""
+		user = last.get_user(user)
+		np = user.get_now_playing()
+		if not np:
+			last_song = user.get_recent_tracks(2)[0]
+			self.say(c, "%s last played: %s" % (user, last_song))
+		else:
+			self.say(c, "%s is playing: %s" % (user, np))
 
 	def say(self, c, message):
 		"""Print message in the channel"""
@@ -148,11 +140,13 @@ arguments.add_argument('-n', '--nick', default='GentooTestBot', help="bot's name
 arguments.add_argument('-c', '--channel', default='#/g/test', metavar='channel',
 		help='channel to connect to.', dest='channel')
 
-if __name__ == '__main__':
+def main():
 	args = arguments.parse_args()
+
 	with open("last.fm", 'rt') as f:
 		api_pub = f.readline()[:-1]
 		api_secret = f.readline()[:-1]
+
 	last = pylast.LastFMNetwork(api_key = api_pub, api_secret = api_secret)
 	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=args.port)
 	Gentoo_Bot.start()
