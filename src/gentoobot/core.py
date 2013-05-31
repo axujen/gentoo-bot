@@ -28,15 +28,7 @@ from gentoobot.commands import commands
 import gentoobot.config as config
 
 class GentooBot(irc.bot.SingleServerIRCBot):
-	def __init__(self, channel, nickname, server, port=6667, reconnect=5):
-		server_spec = irc.bot.ServerSpec(server, port)
-		irc.bot.SingleServerIRCBot.__init__(self, [server_spec], nickname, nickname,
-				reconnection_interval=reconnect)
-		self.channel = channel
-		self.reconnect = reconnect
-		self.nickname = nickname
-		self.server = server
-		self.port = port
+	def __init__(self):
 		self.banned_words = ('facebook', 'kek', 'reddit', 'kex')
 
 	def on_welcome(self, c, e):
@@ -128,6 +120,19 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		message = re.sub(r'\n', '  |  ', message)
 		c.privmsg(self.channel, message)
 
+	def start(self, channel, nickname, server, port, reconnect=5):
+		"""Start the bot."""
+		server_spec = irc.bot.ServerSpec(server, port)
+		self.channel = channel
+		self.reconnect = reconnect
+		self.nickname = nickname
+		self.server = server
+		self.port = port
+		super().__init__([server_spec], nickname, nickname, reconnection_interval=reconnect)
+		super().start()
+
+GBot = GentooBot()
+
 def main():
 	# Get connection options written in config file.
 	opt = config.get_conf('connection')
@@ -143,7 +148,6 @@ def main():
 			metavar='channel',	help='channel to connect to.', dest='channel')
 	args = arguments.parse_args()
 
-	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=int(args.port))
 	print('Starting GentooBot in channel "%s" server "%s:%s", as "%s"' % ( args.channel,
 		args.server, args.port, args.nick))
-	Gentoo_Bot.start()
+	GBot.start(args.channel, args.nick, server=args.server, port=int(args.port))
