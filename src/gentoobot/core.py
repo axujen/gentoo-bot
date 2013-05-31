@@ -95,7 +95,6 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				title = soup.title.string
 				self.say(c, "Page title: %s" % title)
 				return
-			self.say(c, "No title found for %s." % url)
 
 	def do_command(self, c, e):
 		"""Handler for user commands."""
