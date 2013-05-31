@@ -91,6 +91,9 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def do_command(self, c, e):
 		"""Handler for user commands."""
+		if not e.arguments[0].startswith(":"):
+			return
+
 		msg = commands.exec_command(e)
 		if isinstance(msg, str):
 			msg = msg.split('\n')
