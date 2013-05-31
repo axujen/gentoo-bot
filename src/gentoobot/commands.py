@@ -156,7 +156,7 @@ class user_commands(commands):
 				"reissue this command." % (source, user)
 
 commands = user_commands()
-commands.add_command(':np [user]', ':np\nThis command will show the current song '\
+commands.add_command(':np', ':np [user]\nThis command will show the current song '\
 		'playing in your lastfm profile.\nIf `user` is specified it will use that.', 0)
 commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
 		"compare user1 to user2's lastfm profiles", 1)
