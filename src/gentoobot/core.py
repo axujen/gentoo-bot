@@ -81,9 +81,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def resolve_url(self, c, e):
 		"""if found, resolve the title of a url in the message."""
 		msg = e.arguments[0]
-		url_pattern = re.compile(r"https?:\/\/w{0,3}\w*?\.(\w*?\.)?\w{2,3}\S*|www\.(\w*?\.)?\w*?\.\w{2,3}\S*|(\w*?\.)?\w*?\.\w{2,3}[\/\?]\S*")
-		if re.match(url_pattern, msg):
-			url = re.match(url_pattern, msg).group(0)
+		url_pattern = re.compile(r"\(?\bhttp://[-A-Za-z0-9+&@#/%?=~_()|!:,.;]*[-A-Za-z0-9+&@#/%=~_()|]")
+		if re.search(url_pattern, msg):
+			url = re.findall(url_pattern, msg)[0]
+			print('Found url: %s' % url)
 			try:
 				page = urlopen(url).read()
 			except HTTPError as e:
@@ -127,7 +128,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		"""Print message in the channel"""
 		for word in self.banned_words:
 			if word.lower() in message.lower():
-				message = re.sub('(?i)'+word, '-censored-', message)
+				message = re.sub('(?i)'+word, '*'*len(word), message)
 
 		message = re.sub(r'\n', '  |  ', message)
 		self.connection.privmsg(self.channel, message)
