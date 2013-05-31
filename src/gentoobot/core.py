@@ -44,6 +44,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def on_pubmsg(self, c, e):
 		self.installgentoo_reply(c, e)
+		self.bsd_is_dum(c, e)
 		self.resolve_url(c, e)
 		self.do_command(c, e)
 
@@ -56,7 +57,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		msg = e.arguments[0]
 		nick = e.source.nick
 		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
-				'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
+			'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
 				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
 				'Wangblows', "linux", "lunix", "archlinux", 'macs')
 
