@@ -143,11 +143,11 @@ class user_commands(commands):
 		except WSError as e:
 			return str(e)
 
-		self.lastfm_users[source.nick.lower()] = user.name
+		self.lastfm_users[source.lower()] = user.name
 		config.db_save("lastfm_users", self.lastfm_users)
 
 		return "%s registered to http://lastfm.com/user/%s.\nTo update username "\
-				"reissue this command." % (source.nick, user)
+				"reissue this command." % (source, user)
 
 commands = user_commands()
 commands.add_command(':np', ':np\nThis command will show the current song '\
