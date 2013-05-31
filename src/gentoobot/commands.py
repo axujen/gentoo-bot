@@ -163,7 +163,7 @@ class user_commands(commands):
 	def do_info(self, arguments, event):
 		"""information about the script."""
 		return 'GentooBot is an irc bot written in python by axujen to annoy users with '\
-				'install gentoo messages.\nOther features have been added to '\
+				'install gentoo messages.Other features have been added to '\
 				'give users incentive to not put the bot on their ignore list.'\
 				'Sauce: <https://github.com/axujen/gentoo-bot>'
 
