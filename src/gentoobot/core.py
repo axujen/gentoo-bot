@@ -37,7 +37,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.nickname = nickname
 		self.server = server
 		self.port = port
-		self.banned_words = ('facebook', 'kek', 'reddit')
+		self.banned_words = ('facebook', 'kek', 'reddit', 'kex')
 
 	def on_welcome(self, c, e):
 		c.join(self.channel)

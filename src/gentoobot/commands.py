@@ -175,12 +175,17 @@ class user_commands(commands):
 
 	def do_g(self, arguments, event):
 		"""Google command"""
-		query = urlencode({'q':' '.join(arguments)})
+		search = ' '.join(arguments)
+		query = urlencode({'q':search})
 		url = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&%s'\
 				% query)
 		print('Sending search query %s' % url.url)
 		response = loads(url.read().decode())
-		result = response['responseData']['results'][0]['unescapedUrl']
+		try:
+			result = response['responseData']['results'][0]['unescapedUrl']
+		except (KeyError, IndexError):
+			print('No results found!')
+			return '%s: No results found for "%s"' % (e.source.nick, search)
 		print('Search result %s' % result)
 		return "%s: %s" % (event.source.nick, result)
 
