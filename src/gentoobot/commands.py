@@ -132,6 +132,9 @@ class user_commands(commands):
 			user.get_id()
 		except WSError as e:
 			return str(e)
+		except IndexError:
+			return "I usually crash here, but axujen is so great that now i "\
+					"don't, he still doesn't know why i crash or how to fix it."
 
 		np = user.get_now_playing()
 		if not np:
