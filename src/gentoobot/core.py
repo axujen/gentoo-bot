@@ -41,7 +41,6 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def on_welcome(self, c, e):
 		c.join(self.channel)
-		self.say(c, "Ahoy! im back.")
 
 	def on_pubmsg(self, c, e):
 		self.installgentoo_reply(c, e)
