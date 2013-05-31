@@ -185,7 +185,7 @@ class user_commands(commands):
 			result = response['responseData']['results'][0]['unescapedUrl']
 		except (KeyError, IndexError):
 			print('No results found!')
-			return '%s: No results found for "%s"' % (e.source.nick, search)
+			return '%s: No results found for "%s"' % (event.source.nick, search)
 		print('Search result %s' % result)
 		return "%s: %s" % (event.source.nick, result)
 
