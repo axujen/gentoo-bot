@@ -91,9 +91,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def do_command(self, c, e):
 		"""Handler for user commands."""
-		msg = commands.exec_command(e.arguments[0])
+		msg = commands.exec_command(e.arguments[0]).split('\n')
 		if msg:
-			self.say(c, msg)
+			for line in msg:
+				self.say(c, line)
 
 	def say(self, c, message):
 		"""Print message in the channel"""
