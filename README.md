@@ -1,7 +1,7 @@
 GentooBot
 =========
 Is an annoying bot designed to spam users in a channel with
-install gentoo messages. Features have been added to the bot give
+install gentoo messages. Features have been added to the bot to give
 users a reason not to put the bot on their ignore list.
 
 #Features:
@@ -24,3 +24,9 @@ users a reason not to put the bot on their ignore list.
 	  -p, --port	port	"server port."
 	  -n, --nick	nick	"bot's name."
 	  -c, --channel	channel	"channel to connect to."
+
+#Requirements:
+* The bot has is only being tested under GNU/Linux with python3.2
+* [python-irc](https://pypi.python.org/pypi/irc/)
+* [pylast](https://pypi.python.org/pypi/pylast)
+* [BeautifulSoup4](http://www.crummy.com/software/BeautifulSoup/)
