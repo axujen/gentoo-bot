@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser, REMAINDER
+from json import loads
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 from pylast import LastFMNetwork
 from pylast import WSError
@@ -170,6 +173,18 @@ class user_commands(commands):
 				'give users incentive to not put the bot on their ignore list.\n'\
 				'Sauce: <https://github.com/axujen/gentoo-bot>'
 
+	def do_g(self, arguments, event):
+		"""Google command"""
+		query = urlencode({'q':' '.join(arguments)})
+		url = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&%s'\
+				% query)
+		print('Sending search query %s' % url.url)
+		response = loads(url.read().decode())
+		result = response['responseData']['results'][0]['unescapedUrl']
+		print('Search result %s' % result)
+		return "%s: %s" % (event.source.nick, result)
+
+
 commands = user_commands()
 commands.add_command(':np', ':np [user]\nThis command will show the current song '\
 		'playing in your lastfm profile.\nIf `user` is specified it will use that.', 0)
@@ -179,3 +194,4 @@ commands.add_command(':fm_register', 'usage: :fm_register `lastfm username`\n'\
 		'This command will associate your current nick with a lastfm username.', 1)
 commands.add_command(':say', ':say text\nTell the bot to say things', 1)
 commands.add_command(':info', 'Prints information about the bot.')
+commands.add_command(':g', ':g `search query`\nPerform a google query.', 1)

@@ -144,6 +144,6 @@ def main():
 	args = arguments.parse_args()
 
 	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=int(args.port))
-	print('Starting GentooBot in channel "%s" server "%s:%s", as "%s"' % ( opt['channel'],
-		opt['server'], opt['port'], opt['nick']))
+	print('Starting GentooBot in channel "%s" server "%s:%s", as "%s"' % ( args.channel,
+		args.server, args.port, args.nick))
 	Gentoo_Bot.start()
