@@ -26,7 +26,7 @@ users a reason not to put the bot on their ignore list.
 	  -c, --channel	channel	"channel to connect to."
 
 #Requirements:
-* The bot has is only being tested under GNU/Linux with python3.2
+* The bot is only being tested under GNU/Linux with python3.2 (Tested running under 3.3 aswell)
 * [python-irc](https://pypi.python.org/pypi/irc/)
 * [pylast](https://pypi.python.org/pypi/pylast)
 * [BeautifulSoup4](http://www.crummy.com/software/BeautifulSoup/)
