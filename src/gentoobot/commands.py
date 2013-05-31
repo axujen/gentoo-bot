@@ -162,7 +162,7 @@ class user_commands(commands):
 
 	def do_info(self, arguments, event):
 		"""information about the script."""
-		return 'GentooBot is a script made by axujen to annoying users with '\
+		return 'GentooBot is a script made by axujen to annoy users with '\
 				'install gentoo messages.\nOther features have been added to '\
 				'give users incentive to not put the bot on their ignore list.\n'\
 				'Sauce: <https://github.com/axujen/gentoo-bot>'
