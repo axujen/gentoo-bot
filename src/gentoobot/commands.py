@@ -104,12 +104,13 @@ class user_commands(commands):
 			return str(e)
 		rating = float(compare[0])*100
 		rating = int(rating)
-		try:
+		common_artists = compare[1]
+		if common_artists:
 			common_artists = ', '.join([artist.name for artist in compare[1]])
-		except IndexError:
+		else:
 			common_artists = 'None!'
 
-		return("Compatibility between %s and %s is %d%%! Common artists are: %s."\
+		return("Compatibility between %s and %s is %d%%! Common artists are: %s"\
 					% (comparer, user, rating, common_artists))
 
 	def do_np(self, arguments, event):
