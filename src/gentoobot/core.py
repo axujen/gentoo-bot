@@ -94,14 +94,16 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			soup = BeautifulSoup(page)
 			p_url = urlparse(url)
 			if p_url.netloc == 'boards.4chan.org' and re.match(r'^/\w+/res/(\d+|\d+#p\d+)$', p_url.path):
-				subject = soup.finall('', 'subject').text
-				if not subject:
-					try:
-						subject = soup.findAll('', 'postMessage')[0].text[:100]+'...'
-					except IndexError:
-						suject = soup.findAll('', 'postMessage')[0].text
+				subject = soup.findAll('', 'subject')[0].text
+				try:
+					body = soup.findAll('', 'postMessage')[0].text[:100]+'...'
+				except IndexError:
+					body = soup.findAll('', 'postMessage')[0].text
 
-				self.say(c, '%s: %s' % (soup.title.text, subject))
+				if not subject:
+					self.say(c, '%s: %s' % (soup.title.text, body))
+				else:
+					self.say(c, '%s: %s | %s' % (soup.title.text, subject, body))
 				return
 
 			if soup.title:
