@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from configparser import ConfigParser
+import json
 import os.path
 from os import mkdir
 
@@ -52,3 +53,18 @@ def get_conf(section):
 		with open(configrc, 'w') as configfile:
 			config.write(configfile)
 	return dict(config[section.upper()])
+
+def db_save(file, object):
+	"""Save a `object` into a json `file`"""
+	file = os.path.join(config_folder, file)
+	if not os.path.exists(file):
+		open(file, 'a').close()
+	with open(file, 'w') as f:
+		json.dump(object, f, indent=4)
+
+def db_load(file):
+	"""Load a an object from a json `file`"""
+	if not os.path.exists(file):
+		return False
+	with open(file, 'r') as f:
+		return json.load(f)

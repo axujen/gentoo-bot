@@ -16,6 +16,7 @@
 from argparse import ArgumentParser, REMAINDER
 
 from pylast import LastFMNetwork
+from pylast import WSError
 import gentoobot.config as config
 
 # Lastfm instance
@@ -43,26 +44,27 @@ class commands(object):
 		else:
 			raise ValueError
 
-	def exec_command(self, message):
+	def exec_command(self, event):
+		msg = event.arguments[0]
 		try:
-			command, arguments = self._parse_commands(message)
+			command, arguments = self._parse_commands(msg)
 		except ValueError:
 			return
 
 		for cmd in self.commands:
 			if command == cmd:
-				return self._execute(command, arguments)
+				return self._execute(command, arguments, event)
 		raise ValueError('Unknown command %s' % command)
 
-	def _execute(self, command, arguments):
+	def _execute(self, command, arguments, event):
 		"""docstring for execute"""
 		if len(arguments) < self.commands[command][1]:
 			return "Not enough arguments!"
 
 		do_cmd = 'do_'+command
-		return getattr(self, do_cmd)(arguments)
+		return getattr(self, do_cmd)(arguments, event)
 
-	def do_help(self, arguments):
+	def do_help(self, arguments, event):
 		"""docstring for do_help"""
 		if not arguments:
 			cmds = ', '.join([':'+cmd for cmd in self.commands.keys()])
@@ -79,8 +81,13 @@ class user_commands(commands):
 	def __init__(self):
 		super().__init__()
 		self.add_command(':help', 'Show this help message.')
+		lastfm_users = config.db_load('lastfm_users')
+		if lastfm_users == False:
+			self.lastfm_users = {}
+		else:
+			self.lastfm_users = lastfm_users
 
-	def do_compare(self, arguments):
+	def do_compare(self, arguments, event):
 		"""Compare 2 lastfm users."""
 		user1 = arguments[0]
 		user2 = arguments[1]
@@ -99,7 +106,7 @@ class user_commands(commands):
 		return("Compatibility between %s and %s is %d%%! Common artists are: %s."\
 					% (user1, user2, rating, common_artists))
 
-	def do_np(self, arguments):
+	def do_np(self, arguments, event):
 		"""Playing current or last playing song by the user."""
 		user = self.lastfm.get_user(arguments[0])
 		np = user.get_now_playing()
@@ -109,14 +116,23 @@ class user_commands(commands):
 		else:
 			return("%s is playing: %s" % (user, np))
 
-	def do_fm_register(self, arguments):
+	def do_fm_register(self, arguments, event):
 		"""Register a nick to a username."""
-		return "This command is not implemented yet."
+		source = event.source
+		user = self.lastfm.get_user(arguments[0])
+		try:
+			user.get_id()
+		except WSError:
+			return "No lastfm user named %s" % user
+		self.lastfm_users[source] = user.name
+		config.db_save("lastfm_users", self.lastfm_users)
+		return "%s registered to http://lastfm.com/user/%s.\nTo update username "\
+				"reissue this command." % (source, user)
 
 commands = user_commands()
 commands.add_command(':np', ':np\nThis command will show the current song '\
 		'playing in your lastfm profile', 1)
 commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
 		"compare user1 to user2's lastfm profiles", 2)
-commands.add_command(':fm_regiser', 'usage: :fm_register `lastfm username`\n'\
+commands.add_command(':fm_register', 'usage: :fm_register `lastfm username`\n'\
 		'This command will associate your current nick with a lastfm username.')
