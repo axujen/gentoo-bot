@@ -89,30 +89,46 @@ class user_commands(commands):
 
 	def do_compare(self, arguments, event):
 		"""Compare 2 lastfm users."""
-		user1 = arguments[0]
-		user2 = arguments[1]
+		if len(arguments) > 1:
+			comparer = arguments[1]
+		elif event.source in self.lastfm_users:
+			comparer = self.lastfm_users[event.source]
+		else:
+			comparer = event.source.nick
+
+		user = arguments[0]
 		try:
-			comparer = self.lastfm.get_user(user1)
-			compare = comparer.compare_with_user(user2)
+			comparer = self.lastfm.get_user(comparer)
+			compare = comparer.compare_with_user(user)
 		except WSError as e:
-			return(e.reason)
-			return
-		rating = int(compare[0])*100
+			return str(e)
+		rating = float(compare[0])*100
+		rating = int(rating)
 		try:
 			common_artists = ', '.join([artist.name for artist in compare[1]])
 		except IndexError:
 			common_artists = 'None!'
 
 		return("Compatibility between %s and %s is %d%%! Common artists are: %s."\
-					% (user1, user2, rating, common_artists))
+					% (comparer, user, rating, common_artists))
 
 	def do_np(self, arguments, event):
 		"""Playing current or last playing song by the user."""
-		user = self.lastfm.get_user(arguments[0])
-		np = user.get_now_playing()
+		if len(arguments):
+			user = arguments[0]
+		elif event.source in self.lastfm_users:
+			user = self.lastfm_users[event.source]
+		else:
+			user = event.source.nick
+
+		user = self.lastfm.get_user(user)
+		try:
+			np = user.get_now_playing()
+		except WSError as e:
+			return str(e)
 		if not np:
 			last_song = user.get_recent_tracks(2)[0][0]
-			return("%s last played: %s" % (user, last_song[0]))
+			return("%s last played: %s" % (user, last_song))
 		else:
 			return("%s is playing: %s" % (user, np))
 
@@ -122,8 +138,8 @@ class user_commands(commands):
 		user = self.lastfm.get_user(arguments[0])
 		try:
 			user.get_id()
-		except WSError:
-			return "No lastfm user named %s" % user
+		except WSError as e:
+			return str(e)
 		self.lastfm_users[source] = user.name
 		config.db_save("lastfm_users", self.lastfm_users)
 		return "%s registered to http://lastfm.com/user/%s.\nTo update username "\
@@ -131,8 +147,8 @@ class user_commands(commands):
 
 commands = user_commands()
 commands.add_command(':np', ':np\nThis command will show the current song '\
-		'playing in your lastfm profile', 1)
+		'playing in your lastfm profile', 0)
 commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
-		"compare user1 to user2's lastfm profiles", 2)
+		"compare user1 to user2's lastfm profiles", 1)
 commands.add_command(':fm_register', 'usage: :fm_register `lastfm username`\n'\
-		'This command will associate your current nick with a lastfm username.')
+		'This command will associate your current nick with a lastfm username.', 1)

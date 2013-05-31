@@ -64,6 +64,7 @@ def db_save(file, object):
 
 def db_load(file):
 	"""Load a an object from a json `file`"""
+	file = os.path.join(config_folder, file)
 	if not os.path.exists(file):
 		return False
 	with open(file, 'r') as f:
