@@ -100,6 +100,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			for word in self.banned_words:
 				if word.lower() in msg.lower():
 					self.say(c, '%s: Are you trying to get me kicked?' % e.source.nick)
+					return
 			msg = msg.split('\n')
 			for line in msg:
 				self.say(c, line)
