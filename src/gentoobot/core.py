@@ -56,13 +56,19 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		msg = e.arguments[0]
 		nick = e.source.nick
 		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
-				'windows', 'mac', 'arch', 'microsoft', 'apple', 'bsd', 'minix',
+				'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
 				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
-				'Wangblows', "linux", "lunix", "archlinux")
+				'Wangblows', "linux", "lunix", "archlinux", 'macs')
+
 		for keyword in ig_keywords:
 			if re.search(r"\b(%s)\b" % keyword, msg, re.I):
 				self.say(c, "%s: Install Gentoo." % nick)
-				break
+				return
+
+	def bsd_is_dum(self, c, e):
+		"""docstring for bsd_is_dum"""
+		if re.search(r'([a-zA-Z]+|\s+|^)bsd\b', e.arguments[0], re.I):
+			self.say(c, '%s: bsd is dum' % e.source.nick)
 
 	def resolve_url(self, c, e):
 		"""if found, resolve the title of a url in the message."""
