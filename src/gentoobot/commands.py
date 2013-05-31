@@ -122,8 +122,3 @@ commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
 		"compare user1 to user2's lastfm profiles", 2)
 commands.add_command(':fm_regiser', 'usage: :fm_register `lastfm username`\n'\
 		'This command will associate your current nick with a lastfm username.')
-
-print(commands.exec_command(":help"))
-print(commands.exec_command(":help np"))
-print(commands.exec_command(":help :compare"))
-print(commands.exec_command(":help :muh_dik"))
