@@ -68,7 +68,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 	def bsd_is_dum(self, c, e):
 		"""docstring for bsd_is_dum"""
-		if re.search(r'[^\d.-]bsd\b', e.arguments[0], re.I):
+		if re.search(r'(^|[^\d.-])bsd\b', e.arguments[0], re.I):
 			self.say(c, '%s: bsd is dum' % e.source.nick)
 
 	def resolve_url(self, c, e):
