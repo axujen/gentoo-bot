@@ -160,6 +160,13 @@ class user_commands(commands):
 		msg = ' '.join(arguments)
 		return msg
 
+	def do_info(self, arguments, event):
+		"""information about the script."""
+		return 'GentooBot is a script made by axujen to annoying users with '\
+				'install gentoo messages.\nOther features have been added to '\
+				'give users incentive to not put the bot on their ignore list.\n'\
+				'Sauce: <https://github.com/axujen/gentoo-bot>'
+
 commands = user_commands()
 commands.add_command(':np', ':np [user]\nThis command will show the current song '\
 		'playing in your lastfm profile.\nIf `user` is specified it will use that.', 0)
@@ -168,3 +175,4 @@ commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
 commands.add_command(':fm_register', 'usage: :fm_register `lastfm username`\n'\
 		'This command will associate your current nick with a lastfm username.', 1)
 commands.add_command(':say', ':say text\nTell the bot to say things', 1)
+commands.add_command(':info', 'Prints information about the bot.')
