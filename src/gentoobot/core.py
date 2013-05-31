@@ -36,6 +36,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.nickname = nickname
 		self.server = server
 		self.port = port
+		self.banned_words = ('facebook', 'kek', 'reddit')
 
 	def on_welcome(self, c, e):
 		c.join(self.channel)
@@ -96,6 +97,9 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 		msg = commands.exec_command(e)
 		if isinstance(msg, str):
+			for word in self.banned_words:
+				if word.lower() in msg.lower():
+					self.say(c, '%s: Are you trying to get me kicked?' % e.source.nick)
 			msg = msg.split('\n')
 			for line in msg:
 				self.say(c, line)

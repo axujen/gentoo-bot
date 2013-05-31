@@ -80,7 +80,7 @@ class commands(object):
 class user_commands(commands):
 	def __init__(self):
 		super().__init__()
-		self.add_command(':help', 'Show this help message.')
+		self.add_command(':help', 'Show the help message. duh.')
 		lastfm_users = config.db_load('lastfm_users')
 		if lastfm_users == False:
 			self.lastfm_users = {}
@@ -156,8 +156,8 @@ class user_commands(commands):
 				"reissue this command." % (source, user)
 
 commands = user_commands()
-commands.add_command(':np', ':np\nThis command will show the current song '\
-		'playing in your lastfm profile', 0)
+commands.add_command(':np [user]', ':np\nThis command will show the current song '\
+		'playing in your lastfm profile.\nIf `user` is specified it will use that.', 0)
 commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
 		"compare user1 to user2's lastfm profiles", 1)
 commands.add_command(':fm_register', 'usage: :fm_register `lastfm username`\n'\
