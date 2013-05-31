@@ -18,6 +18,7 @@ from argparse import ArgumentParser, REMAINDER
 from pylast import LastFMNetwork
 from pylast import WSError
 import gentoobot.config as config
+from time import sleep
 
 # Lastfm instance
 last_opt = config.get_conf('lastfm')
@@ -162,6 +163,7 @@ class user_commands(commands):
 
 	def do_info(self, arguments, event):
 		"""information about the script."""
+		sleep(5)
 		return 'GentooBot is an irc bot written in python by axujen to annoy users with '\
 				'install gentoo messages.\nOther features have been added to '\
 				'give users incentive to not put the bot on their ignore list.\n'\
