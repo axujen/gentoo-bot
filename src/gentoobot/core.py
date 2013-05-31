@@ -16,6 +16,7 @@
 
 import re, sys
 from urllib.request import urlopen
+from urllib.parse import urlparse
 from urllib.error import *
 from bs4 import BeautifulSoup
 from time import sleep
@@ -91,6 +92,16 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				except:
 					return
 			soup = BeautifulSoup(page)
+			p_url = urlparse(url)
+			if p_url.netloc == 'boards.4chan.org' and re.match(r'^/\w+/res/(\d+|\d+#p\d+)$', p_url.path):
+				try:
+					subject = soup.findAll('', 'postMessage')[0].text[:100]+'...'
+				except IndexError:
+					suject = soup.findAll('', 'postMessage')[0].text
+
+				self.say(c, '%s: %s' % (soup.title.text, subject))
+				return
+
 			if soup.title:
 				title = soup.title.string
 				self.say(c, "Page title: %s" % title)
