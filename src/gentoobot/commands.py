@@ -189,6 +189,23 @@ class user_commands(commands):
 		print('Search result %s' % result)
 		return "%s: %s" % (event.source.nick, result)
 
+	def do_yt(self, arguments, event):
+		"""Youtube search command"""
+		search = ' '.join(arguments)
+		query = urlencode({'q':search})
+		url = urlopen('https://gdata.youtube.com/feeds/api/videos?alt=json&%s'\
+				% query)
+
+		print('Sending query %s' % url.url)
+		response = loads(url.read().decode())
+		try:
+			result = response['feed']['entry'][0]['media$group']['media$player'][0]['url'].split('&', 1)[0]
+		except (KeyError, IndexError):
+			print('No results found!')
+			return '%s: No results found for "%s"' % (event.source.nick, search)
+		print("Search result %s" % result)
+		return "%s: %s" % (event.source.nick, result)
+
 
 commands = user_commands()
 commands.add_command(':np', ':np [user]\nThis command will show the current song '\
@@ -199,4 +216,5 @@ commands.add_command(':fm_register', 'usage: :fm_register `lastfm username`\n'\
 		'This command will associate your current nick with a lastfm username.', 1)
 commands.add_command(':say', ':say text\nTell the bot to say things', 1)
 commands.add_command(':info', 'Prints information about the bot.')
-commands.add_command(':g', ':g `search query`\nPerform a google query.', 1)
+commands.add_command(':g', ':g `search query`\nPerform a google search query.', 1)
+commands.add_command(':yt', ':yt `search query`\nPerform a youtube search query.', 1)
