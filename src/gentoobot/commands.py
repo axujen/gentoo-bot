@@ -91,12 +91,14 @@ class user_commands(commands):
 		"""Compare 2 lastfm users."""
 		if len(arguments) > 1:
 			comparer = arguments[1]
-		elif event.source in self.lastfm_users:
-			comparer = self.lastfm_users[event.source]
+		elif event.source.nick.lower() in self.lastfm_users:
+			comparer = self.lastfm_users[event.source.nick.lower()]
 		else:
 			comparer = event.source.nick
 
 		user = arguments[0]
+		if user.lower() in self.lastfm_users:
+			user = self.lastfm_users[user.lower()]
 		try:
 			comparer = self.lastfm.get_user(comparer)
 			compare = comparer.compare_with_user(user)
@@ -117,11 +119,10 @@ class user_commands(commands):
 		"""Playing current or last playing song by the user."""
 		if len(arguments):
 			user = arguments[0]
-		elif event.source in self.lastfm_users:
-			user = self.lastfm_users[event.source]
+		elif event.source.nick.lower() in self.lastfm_users:
+			user = self.lastfm_users[event.source.nick.lower()]
 		else:
 			user = event.source.nick
-
 		user = self.lastfm.get_user(user)
 		try:
 			np = user.get_now_playing()
@@ -135,16 +136,18 @@ class user_commands(commands):
 
 	def do_fm_register(self, arguments, event):
 		"""Register a nick to a username."""
-		source = event.source
+		source = event.source.nick
 		user = self.lastfm.get_user(arguments[0])
 		try:
 			user.get_id()
 		except WSError as e:
 			return str(e)
-		self.lastfm_users[source] = user.name
+
+		self.lastfm_users[source.nick.lower()] = user.name
 		config.db_save("lastfm_users", self.lastfm_users)
+
 		return "%s registered to http://lastfm.com/user/%s.\nTo update username "\
-				"reissue this command." % (source, user)
+				"reissue this command." % (source.nick, user)
 
 commands = user_commands()
 commands.add_command(':np', ':np\nThis command will show the current song '\
