@@ -30,6 +30,7 @@ import gentoobot.config as config
 class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self):
 		self.banned_words = ('facebook', 'kek', 'reddit', 'kex')
+		self.wholist = {}
 
 	def on_welcome(self, c, e):
 		c.join(self.channel)
@@ -40,10 +41,24 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.resolve_url(c, e)
 		self.do_command(c, e)
 
+	def on_whoreply(self, c, e):
+		"""docstring for on_whoreply"""
+		args = e.arguments
+		fields = ('channel', 'realname', 'host', 'server', 'nick', 'flags', 'tail')
+		who = {}
+		for item, field in zip(args, fields):
+			who[field] = item
+		print(who)
+		self.wholist[who['nick'].lower()] = who
+
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
 		sleep(self.reconnect)
 		c.join(self.channel)
+
+	def who(self, nick):
+		"""Perform a WHO command on `nick`"""
+		self.connection.who(nick)
 
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
@@ -55,13 +70,13 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 		for keyword in ig_keywords:
 			if re.search(r"\b(%s)\b" % keyword, msg, re.I):
-				self.say(c, "%s: Install Gentoo." % nick)
+				self.say( "%s: Install Gentoo." % nick)
 				return
 
 	def bsd_is_dum(self, c, e):
 		"""docstring for bsd_is_dum"""
 		if re.search(r'(^|[^\d.-])bsd\b', e.arguments[0], re.I):
-			self.say(c, '%s: bsd is dum' % e.source.nick)
+			self.say( '%s: bsd is dum' % e.source.nick)
 
 	def resolve_url(self, c, e):
 		"""if found, resolve the title of a url in the message."""
@@ -72,10 +87,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			try:
 				page = urlopen(url).read()
 			except HTTPError as e:
-				self.say(c, "HTTP Error %d" % e.code)
+				self.say( "HTTP Error %d" % e.code)
 				return
 			except URLError as e:
-				self.say(c, "Failed to reach server, reason %s" % e.reason)
+				self.say( "Failed to reach server, reason %s" % e.reason)
 				return
 			except ValueError:
 				try:
@@ -92,14 +107,14 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 					body = soup.findAll('', 'postMessage')[0].text
 
 				if not subject:
-					self.say(c, '%s: %s' % (soup.title.text, body))
+					self.say( '%s: %s' % (soup.title.text, body))
 				else:
-					self.say(c, '%s: %s | %s' % (soup.title.text, subject, body))
+					self.say( '%s: %s | %s' % (soup.title.text, subject, body))
 				return
 
 			if soup.title:
 				title = soup.title.string
-				self.say(c, "Page title: %s" % title)
+				self.say( "Page title: %s" % title)
 				return
 
 	def do_command(self, c, e):
@@ -109,16 +124,16 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 		msg = commands.exec_command(e)
 		if isinstance(msg, str):
-			self.say(c, msg)
+			self.say( msg)
 
-	def say(self, c, message):
+	def say(self, message):
 		"""Print message in the channel"""
 		for word in self.banned_words:
 			if word.lower() in message.lower():
 				message = re.sub('(?i)'+word, '-censored-', message)
 
 		message = re.sub(r'\n', '  |  ', message)
-		c.privmsg(self.channel, message)
+		self.connection.privmsg(self.channel, message)
 
 	def start(self, channel, nickname, server, port, reconnect=5):
 		"""Start the bot."""
