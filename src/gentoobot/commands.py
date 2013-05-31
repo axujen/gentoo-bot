@@ -119,15 +119,21 @@ class user_commands(commands):
 		"""Playing current or last playing song by the user."""
 		if len(arguments):
 			user = arguments[0]
+			if user.lower() in self.lastfm_users:
+				user = self.lastfm_users[user.lower()]
+
 		elif event.source.nick.lower() in self.lastfm_users:
 			user = self.lastfm_users[event.source.nick.lower()]
 		else:
 			user = event.source.nick
+
 		user = self.lastfm.get_user(user)
 		try:
-			np = user.get_now_playing()
+			user.get_id()
 		except WSError as e:
 			return str(e)
+
+		np = user.get_now_playing()
 		if not np:
 			last_song = user.get_recent_tracks(2)[0][0]
 			return("%s last played: %s" % (user, last_song))
