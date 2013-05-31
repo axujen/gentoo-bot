@@ -59,7 +59,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
 			'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
 				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
-				'Wangblows', "linux", "lunix", "archlinux", 'macs')
+				'Wangblows', "linux", "lunix", "archlinux", 'macs', 'os x')
 
 		for keyword in ig_keywords:
 			if re.search(r"\b(%s)\b" % keyword, msg, re.I):
