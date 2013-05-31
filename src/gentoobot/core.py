@@ -105,7 +105,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		"""Print message in the channel"""
 		for word in self.banned_words:
 			if word.lower() in message.lower():
-				message = re.sub('(?i)'+word, '++CENSORED++', message)
+				message = re.sub('(?i)'+word, '-consored-', message)
 		c.privmsg(self.channel, message)
 
 def main():
