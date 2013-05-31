@@ -17,8 +17,7 @@
 import re, sys
 from urllib.request import urlopen
 from urllib.error import *
-# from html.parser import HTMLParser
-from lxml import etree
+from bs4 import BeautifulSoup
 from time import sleep
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
@@ -83,9 +82,9 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 					page = urlopen("http://%s" % url).read()
 				except:
 					return
-			html = etree.HTML(page)
-			if html.findtext('.//title'):
-				title = html.findtext('.//title')
+			soup = BeautifulSoup(page)
+			if soup.title:
+				title = soup.title.string
 				self.say(c, "Page title: %s" % title)
 				return
 			self.say(c, "No title found for %s." % url)
