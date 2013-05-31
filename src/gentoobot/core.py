@@ -97,16 +97,15 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 		msg = commands.exec_command(e)
 		if isinstance(msg, str):
-			for word in self.banned_words:
-				if word.lower() in msg.lower():
-					self.say(c, '%s: Are you trying to get me kicked?' % e.source.nick)
-					return
 			msg = msg.split('\n')
 			for line in msg:
 				self.say(c, line)
 
 	def say(self, c, message):
 		"""Print message in the channel"""
+		for word in self.banned_words:
+			if word.lower() in message.lower():
+				message = re.sub('(?i)'+word, '++CENSORED++', message)
 		c.privmsg(self.channel, message)
 
 def main():
