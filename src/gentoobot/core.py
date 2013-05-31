@@ -17,14 +17,15 @@
 import re, sys
 from urllib.request import urlopen
 from urllib.error import *
-from html.parser import HTMLParser
+# from html.parser import HTMLParser
+from lxml import etree
 from time import sleep
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import irc.bot
 
-from commands import commands
-import config
+from gentoobot.commands import commands
+import gentoobot.config as config
 
 class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self, channel, nickname, server, port=6667, reconnect=5):
@@ -69,9 +70,8 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		url_pattern = re.compile(r"https?:\/\/w{0,3}\w*?\.(\w*?\.)?\w{2,3}\S*|www\.(\w*?\.)?\w*?\.\w{2,3}\S*|(\w*?\.)?\w*?\.\w{2,3}[\/\?]\S*")
 		if re.match(url_pattern, msg):
 			url = re.match(url_pattern, msg).group(0)
-			print('Found url! %s' % url)
 			try:
-				page = urlopen(url)
+				page = urlopen(url).read()
 			except HTTPError as e:
 				self.say(c, "HTTP Error %d" % e.code)
 				return
@@ -80,12 +80,12 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				return
 			except ValueError:
 				try:
-					page = urlopen("http://%s" % url)
+					page = urlopen("http://%s" % url).read()
 				except:
 					return
-			page_html = page.readall().decode()
-			if re.findall(r"<title>(.*)</title>", page_html):
-				title = HTMLParser().unescape(re.findall(r"<title>(.*)</title>", page_html)[0])
+			html = etree.HTML(page)
+			if html.findtext('.//title'):
+				title = html.findtext('.//title')
 				self.say(c, "Page title: %s" % title)
 				return
 			self.say(c, "No title found for %s." % url)
@@ -115,11 +115,5 @@ def main():
 			metavar='channel',	help='channel to connect to.', dest='channel')
 	args = arguments.parse_args()
 
-	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=args.port)
-	try:
-		Gentoo_Bot.start()
-	except Exception as e:
-		# Log errors.
-		with open('/tmp/gentoobot_error.log', 'a') as error_log:
-			error_log.write(sys.exc_info()[2])
-		sys.exit(sys.exc_info()[2])
+	Gentoo_Bot = GentooBot(args.channel, args.nick, server=args.server, port=int(args.port))
+	Gentoo_Bot.start()

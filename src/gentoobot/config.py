@@ -39,7 +39,7 @@ config['LASTFM'] = {
 		'api_pub'	: '1af49b4138e72da18bae9e77f1af46aa',
 		'api_secret': '3421bd09678c3a191310c5433017e4a6',}
 config['CONNECTION'] = {
-		'server':	'irc.installgentoo',
+		'server':	'irc.installgentoo.com',
 		'port'	:	'6667',
 		'nick'	:	'GentooTestBot',
 		'channel':	'#/g/test',}

@@ -16,7 +16,7 @@
 from argparse import ArgumentParser, REMAINDER
 
 from pylast import LastFMNetwork
-import config
+import gentoobot.config as config
 
 # Lastfm instance
 last_opt = config.get_conf('lastfm')
@@ -51,7 +51,7 @@ class commands(object):
 
 		for cmd in self.commands:
 			if command == cmd:
-				return self._execute(cmd, arguments)
+				return self._execute(command, arguments)
 		raise ValueError('Unknown command %s' % command)
 
 	def _execute(self, command, arguments):
@@ -59,10 +59,8 @@ class commands(object):
 		if len(arguments) < self.commands[command][1]:
 			return "Not enough arguments!"
 
-		try:
-			return getattr(self, 'do_'+command)(arguments)
-		except AttributeError:
-			return 'No method defined for %s yet.' % command
+		do_cmd = 'do_'+command
+		return getattr(self, do_cmd)(arguments)
 
 	def do_help(self, arguments):
 		"""docstring for do_help"""
@@ -99,15 +97,15 @@ class user_commands(commands):
 			common_artists = 'None!'
 
 		return("Compatibility between %s and %s is %d%%! Common artists are: %s."\
-					% (user1, user2, common_artists))
+					% (user1, user2, rating, common_artists))
 
 	def do_np(self, arguments):
 		"""Playing current or last playing song by the user."""
 		user = self.lastfm.get_user(arguments[0])
 		np = user.get_now_playing()
 		if not np:
-			last_song = user.get_recent_tracks(2)[0]
-			return("%s last played: %s" % (user, last_song))
+			last_song = user.get_recent_tracks(2)[0][0]
+			return("%s last played: %s" % (user, last_song[0]))
 		else:
 			return("%s is playing: %s" % (user, np))
 
