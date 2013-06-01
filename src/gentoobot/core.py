@@ -122,7 +122,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 				if 'com' in op:
 					comment = BeautifulSoup(op['com'])
-					comment = comment('p')
+					comment = comment.findAll('p')[0]
 					try:
 						comment = comment[0]
 					except IndexError:
