@@ -63,7 +63,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
 		nick = e.source.nick
-		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian',
+		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian', 'hurd',
 			'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
 				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
 				'Wangblows', "linux", "lunix", "archlinux", 'macs', 'os x')
