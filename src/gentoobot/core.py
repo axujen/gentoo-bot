@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 from urllib.error import *
 from bs4 import BeautifulSoup
 from time import sleep
+from random import choice
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import irc.bot
@@ -30,6 +31,7 @@ import gentoobot.config as config
 class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self):
 		self.banned_words = ('facebook', 'kek', 'reddit', 'kex')
+		self.greetings = ('Hello %s!', 'Welcome %s!', 'Everybody rejoice! %s is here!')
 		self.wholist = {}
 
 	def on_welcome(self, c, e):
@@ -56,6 +58,10 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		sleep(self.reconnect)
 		c.join(self.channel)
 
+	def on_join(self, c, e):
+		"""docstring for on_join"""
+		# self.greeting(c, e)
+
 	def who(self, nick):
 		"""Perform a WHO command on `nick`"""
 		self.connection.who(nick)
@@ -81,7 +87,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def resolve_url(self, c, e):
 		"""if found, resolve the title of a url in the message."""
 		msg = e.arguments[0]
-		url_pattern = re.compile(r"\(?\bhttp://[-A-Za-z0-9+&@#/%?=~_()|!:,.;]*[-A-Za-z0-9+&@#/%=~_()|]")
+		url_pattern = re.compile(r"\(?\bhttp[s]?://[-A-Za-z0-9+&@#/%?=~_()|!:,.;]*[-A-Za-z0-9+&@#/%=~_()|]")
 		if re.search(url_pattern, msg):
 			url = re.findall(url_pattern, msg)[0]
 			print('Found url: %s' % url)
@@ -132,6 +138,16 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 
 		message = re.sub(r'\n', '  |  ', message)
 		self.connection.privmsg(self.channel, message)
+
+	def greeting(self, c, e):
+		"""docstring for greeting"""
+		nick = e.source.nick
+		if nick == self.nickname:
+			return
+
+		print('Greeting %s' % nick)
+		greeting = choice(self.greetings)
+		self.say(greeting % nick)
 
 	def start(self, channel, nickname, server, port, reconnect=5):
 		"""Start the bot."""
