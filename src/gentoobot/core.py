@@ -21,6 +21,7 @@ from urllib.error import *
 from bs4 import BeautifulSoup
 from time import sleep
 from random import choice
+from json import loads
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import irc.bot
@@ -92,30 +93,48 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 			url = re.findall(url_pattern, msg)[0]
 			print('Found url: %s' % url)
 			try:
-				page = urlopen(url).read()
-			except HTTPError as e:
-				self.say( "HTTP Error %d" % e.code)
-				return
-			except URLError as e:
-				self.say( "Failed to reach server, reason %s" % e.reason)
+				o_url = urlopen(url)
+			except (HTTPError, URLError) as e:
+				self.say(str(e))
 				return
 			except ValueError:
 				try:
-					page = urlopen("http://%s" % url).read()
+					o_url = urlopen("http://%s" % url)
 				except:
 					return
-			soup = BeautifulSoup(page)
+
 			p_url = urlparse(url)
 			if p_url.netloc == 'boards.4chan.org' and re.match(r'^/\w+/res/(\d+|\d+#p\d+)$', p_url.path):
-				subject = soup.findAll('', 'subject')[0].text
-				body = soup.findAll('', 'postMessage')[0].contents[0]
-				if len(body) > 150: body = body[:150]+'...'
-				if not subject:
-					self.say( '%s: %s' % (soup.title.text, body))
-				else:
-					self.say( '%s: %s | %s' % (soup.title.text, subject, body))
+				print('Is 4chan thread')
+				path = p_url.path.split('/')
+				board = path[1]
+				thread = path[-1]
+
+				try:
+					op = loads(urlopen('https://api.4chan.org/%s/res/%s.json' %\
+						(board, thread)).read().decode())['posts'][0]
+				except (HTTPError, URLError):
+					self.say(str(e))
+					return
+
+				comment = subject = None
+				replies, images = op['replies'], op['images']
+
+				if 'com' in op: comment = BeautifulSoup(op['com'])('p')[0]# ; print('Comment: %s' % comment)
+				if 'sub' in op: subject = op['sub']; print('Subject: %s' % subject)
+
+				if comment:
+					comment = str(comment)[3:-4].split('<br/')[0]
+					if len(comment) > 100: comment = comment[:100]+'...'
+					print('Comment: %s' % comment)
+
+				message = 'Board: /%s/ | R: %s, I: %s | Subject: %s | Comment: %s'\
+						% (board, replies, images, str(subject), str(comment))
+
+				self.say(message)
 				return
 
+			soup = BeautifulSoup(o_url.read())
 			if soup.title:
 				title = soup.title.string
 				self.say( "Page title: %s" % title)
