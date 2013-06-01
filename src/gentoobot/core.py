@@ -121,18 +121,9 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 				replies, images = op['replies'], op['images']
 
 				if 'com' in op:
-					comment = BeautifulSoup(op['com'])
-					comment = comment.findAll('p')[0]
-					try:
-						comment = comment[0]
-					except IndexError:
-						pass
-				if 'sub' in op: subject = op['sub']; print('Subject: %s' % subject)
-
-				if comment:
-					comment = str(comment)[3:-4].split('<br/')[0]
+					comment = BeautifulSoup(op['com']).text
 					if len(comment) > 100: comment = comment[:100]+'...'
-					print('Comment: %s' % comment)
+				if 'sub' in op: subject = op['sub']
 
 				message = 'Board: /%s/ | R: %s, I: %s | Subject: %s | Comment: %s'\
 						% (board, replies, images, str(subject), str(comment))
