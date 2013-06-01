@@ -33,6 +33,14 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def __init__(self):
 		self.banned_words = ('facebook', 'kek', 'reddit', 'kex')
 		self.greetings = ('Hello %s!', 'Welcome %s!', 'Everybody rejoice! %s is here!')
+		self.ig_replies = (
+		'Install Gentoo.', 'You know what you should do? you should install gentoo.',
+		'Have you ever heard of this os? its called gentoo and i think you should install it.',
+		'Gentoo, install it motherfucker.')
+		self.ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian', 'hurd',
+			'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
+			'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
+			'Wangblows', "linux", "lunix", "archlinux", 'macs', 'os x')
 		self.wholist = {}
 
 	def on_welcome(self, c, e):
@@ -70,14 +78,11 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
 		nick = e.source.nick
-		ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian', 'hurd',
-			'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
-				'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
-				'Wangblows', "linux", "lunix", "archlinux", 'macs', 'os x')
 
-		for keyword in ig_keywords:
+		for keyword in self.ig_keywords:
 			if re.search(r"\b(%s)\b" % keyword, msg, re.I):
-				self.say( "%s: Install Gentoo." % nick)
+				reply = choice(self.ig_replies)
+				self.say( "%s: %s" % (nick, reply))
 				return
 
 	def bsd_is_dum(self, c, e):
