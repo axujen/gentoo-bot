@@ -203,5 +203,5 @@ def main():
 	try:
 		GBot.start(args.channel, args.nick, server=args.server, port=int(args.port))
 	except UnicodeDecodeError as e:
-		GBot.say(e)
+		GBot.say(str(e))
 		print(e)
