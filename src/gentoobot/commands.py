@@ -67,7 +67,7 @@ class commands(object):
 		do_cmd = 'do_'+command
 		return getattr(self, do_cmd)(arguments, event, bot)
 
-	def do_help(self, arguments, event):
+	def do_help(self, arguments, event, bot):
 		"""docstring for do_help"""
 		if not arguments:
 			cmds = ', '.join([':'+cmd for cmd in self.commands.keys()])
