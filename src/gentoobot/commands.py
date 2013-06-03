@@ -47,7 +47,7 @@ class commands(object):
 		else:
 			raise ValueError
 
-	def exec_command(self, event):
+	def exec_command(self, event, bot):
 		msg = event.arguments[0]
 		try:
 			command, arguments = self._parse_commands(msg)
@@ -56,16 +56,16 @@ class commands(object):
 
 		for cmd in self.commands:
 			if command == cmd:
-				return self._execute(command, arguments, event)
+				return self._execute(command, arguments, event, bot)
 		raise ValueError('Unknown command %s' % command)
 
-	def _execute(self, command, arguments, event):
+	def _execute(self, command, arguments, event, bot):
 		"""docstring for execute"""
 		if len(arguments) < self.commands[command][1]:
 			return "Not enough arguments!"
 
 		do_cmd = 'do_'+command
-		return getattr(self, do_cmd)(arguments, event)
+		return getattr(self, do_cmd)(arguments, event, bot)
 
 	def do_help(self, arguments, event):
 		"""docstring for do_help"""
@@ -90,7 +90,7 @@ class user_commands(commands):
 		else:
 			self.lastfm_users = lastfm_users
 
-	def do_compare(self, arguments, event):
+	def do_compare(self, arguments, event, bot):
 		"""Compare 2 lastfm users."""
 		if len(arguments) > 1:
 			comparer = arguments[1]
@@ -118,7 +118,7 @@ class user_commands(commands):
 		return("Compatibility between %s and %s is %d%%! Common artists are: %s"\
 					% (comparer, user, rating, common_artists))
 
-	def do_np(self, arguments, event):
+	def do_np(self, arguments, event, bot):
 		"""Playing current or last playing song by the user."""
 		if len(arguments):
 			user = arguments[0]
@@ -146,7 +146,7 @@ class user_commands(commands):
 		else:
 			return("%s is playing: %s" % (user, np))
 
-	def do_fm_register(self, arguments, event):
+	def do_fm_register(self, arguments, event, bot):
 		"""Register a nick to a username."""
 		source = event.source.nick
 		user = self.lastfm.get_user(arguments[0])
@@ -161,19 +161,19 @@ class user_commands(commands):
 		return "%s registered to http://lastfm.com/user/%s.\nTo update username "\
 				"reissue this command." % (source, user)
 
-	def do_say(self, arguments, event):
+	def do_say(self, arguments, event, bot):
 		"""Say something."""
 		msg = ' '.join(arguments)
 		return msg
 
-	def do_info(self, arguments, event):
+	def do_info(self, arguments, event, bot):
 		"""information about the script."""
 		return 'GentooBot is an irc bot written in python by axujen to annoy users with '\
 				'install gentoo messages.\nOther features have been added to '\
 				'give users incentive to not put the bot on their ignore list.\n'\
 				'Sauce: <https://github.com/axujen/gentoo-bot>'
 
-	def do_g(self, arguments, event):
+	def do_g(self, arguments, event, bot):
 		"""Google command"""
 		search = ' '.join(arguments)
 		query = urlencode({'q':search})
@@ -189,7 +189,7 @@ class user_commands(commands):
 		print('Search result %s' % result)
 		return "%s: %s" % (event.source.nick, result)
 
-	def do_yt(self, arguments, event):
+	def do_yt(self, arguments, event, bot):
 		"""Youtube search command"""
 		search = ' '.join(arguments)
 		query = urlencode({'q':search})
@@ -206,6 +206,10 @@ class user_commands(commands):
 		print("Search result %s" % result)
 		return "%s: %s" % (event.source.nick, result)
 
+	def do_who(self, arguments, event, bot):
+		"""docstring for do_who"""
+		return str(bot.who(arguments[0]))
+
 
 commands = user_commands()
 commands.add_command(':np', ':np [user]\nThis command will show the current song '\
@@ -218,3 +222,4 @@ commands.add_command(':say', ':say text\nTell the bot to say things', 1)
 commands.add_command(':info', 'Prints information about the bot.')
 commands.add_command(':g', ':g `search query`\nPerform a google search query.', 1)
 commands.add_command(':yt', ':yt `search query`\nPerform a youtube search query.', 1)
+commands.add_command(':who', ':who `nick`', 1)

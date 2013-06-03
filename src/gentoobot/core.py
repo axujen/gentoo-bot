@@ -23,6 +23,7 @@ from time import sleep
 from random import choice
 from json import loads
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from _thread import start_new_thread
 
 import irc.bot
 
@@ -50,30 +51,34 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		self.installgentoo_reply(c, e)
 		self.bsd_is_dum(c, e)
 		self.resolve_url(c, e)
-		self.do_command(c, e)
+		start_new_thread(self.do_command, (c, e))
 
 	def on_whoreply(self, c, e):
-		"""docstring for on_whoreply"""
 		args = e.arguments
 		fields = ('channel', 'realname', 'host', 'server', 'nick', 'flags', 'tail')
 		who = {}
 		for item, field in zip(args, fields):
 			who[field] = item
-		print(who)
 		self.wholist[who['nick'].lower()] = who
+		self.whostatus = 'ACK'
 
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
 		sleep(self.reconnect)
 		c.join(self.channel)
 
-	def on_join(self, c, e):
-		"""docstring for on_join"""
-		# self.greeting(c, e)
-
-	def who(self, nick):
+	def who(self, nick, timeout = 5):
 		"""Perform a WHO command on `nick`"""
+		self.whostatus = 'REQUEST'
 		self.connection.who(nick)
+		n = 0
+		while not self.whostatus == 'ACK':
+			if n >= timeout:
+				return "REQUEST TIMEOUT"
+			n += 1
+			print('WAITING FOR WHO REPLY')
+			sleep(2)
+		return self.wholist[nick.lower()]
 
 	def installgentoo_reply(self, c, e):
 		msg = e.arguments[0]
@@ -147,7 +152,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 		if not e.arguments[0].startswith(":"):
 			return
 
-		msg = commands.exec_command(e)
+		msg = commands.exec_command(e, self)
 		if isinstance(msg, str):
 			self.say( msg)
 
