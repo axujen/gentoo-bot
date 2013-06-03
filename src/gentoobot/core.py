@@ -137,10 +137,12 @@ class GentooBot(GentooBotFrame):
 				if re.search(r"\b(%s)\b" % keyword, message, re.I):
 					reply = random.choice(self.ig_replies)
 					self.tell(user, reply)
+					return
 
 	def bsd_is_dum(self, user, message):
 		if re.search(r'(^|[^\d.-])bsd\b', message, re.I):
 			self.tell(user, 'BSD is dum.')
+			return
 
 	def url_title(self, msg):
 		"""if found, resolve the title of a url in the message."""
