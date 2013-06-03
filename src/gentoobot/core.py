@@ -51,7 +51,10 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		channel = e.target
 		user = e.source
 		message = e.arguments[0]
-		print('[%s]%s| %s' % (channel, user.nick, message))
+		try:
+			print('[%s] %s | %s' % (channel, user.nick, message))
+		except UnicodeEncodeError as e:
+			print(str(e))
 		self.actions(channel, user, message)
 
 	def on_whoreply(self, c, e):
