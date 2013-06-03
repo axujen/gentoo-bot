@@ -130,6 +130,7 @@ class GentooBot(GentooBotFrame):
 		start_new_thread(self.url_title, (message,))
 		self.installgentoo_reply(user, message)
 		self.bsd_is_dum(user, message)
+		self.implying(user, message)
 
 	def installgentoo_reply(self, user, message):
 		if self.ig_keywords:
@@ -142,6 +143,12 @@ class GentooBot(GentooBotFrame):
 	def bsd_is_dum(self, user, message):
 		if re.search(r'(^|[^\d.-])bsd\b', message, re.I):
 			self.tell(user, 'BSD is dum.')
+			return
+
+	def implying(self, user, message):
+		"""implying implications"""
+		if message.startswith(('implying ', '>implying ')):
+			self.tell(user, 'implying implications')
 			return
 
 	def url_title(self, msg):
