@@ -31,7 +31,8 @@ class Commands():
 	def __init__(self, last_pub, last_secret, prefix=':'):
 		self.commands = {}
 		self.prefix = prefix
-		self.add_command('help', 'Show this help message. Duh!')
+		self.add_command('help', 'help [command]\nHALP!\nSyntax: command '\
+				'`required argument` [optional argument]')
 
 	def add_command(self, command, help, nargs=0):
 		"""A wrapper around add_argument that registers the command."""
@@ -234,6 +235,13 @@ class UserCommands(Commands):
 		return("Compatibility between %s and %s is %d%%!\nCommon artists are %s"\
 					% (user1, user2, rating, common_artists))
 
+	def do_whois(self, user, arguments, bot):
+		who = bot.who(arguments[0])
+		if who == 'REQUEST TIMEOUT':
+			return "Even i don't know who the fuck %s is" % arguments[0]
+		reply = ', '.join(["%s: %s" % (k, v) for k,v in who.items()])
+		return reply
+
 lastfm_conf = get_config('LASTFM')
 user_commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
 user_commands.add_command('g', 'g `search_query`\nrun a google search query', 1)
@@ -247,3 +255,5 @@ user_commands.add_command('np', "np [user]\nshow the song you're "\
 user_commands.add_command('compare', "compare `user` [user2]\ncompare "\
 		"your lastfm username with another person\nIf two names are given then "\
 		"they will be compared instead", 1)
+user_commands.add_command('whois', 'whois `user`\nRun a whois query, why would '\
+		'you want to do that?', 1)

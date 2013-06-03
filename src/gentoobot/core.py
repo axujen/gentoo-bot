@@ -60,6 +60,8 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		who = {}
 
 		for item, field in zip(args, fields):
+			if field == 'tail':
+				continue
 			who[field] = item
 
 		self.wholist[who['nick'].lower()] = who
