@@ -25,8 +25,8 @@ from thread import start_new_thread
 import irc.bot
 from irc.client import NickMask
 
-from gentoobot.commands import user_commands
-from gentoobot.config import get_config
+from gentoobot.commands import commands
+from gentoobot.config import get_config, load_db
 
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
@@ -108,33 +108,32 @@ class GentooBot(GentooBotFrame):
 	def __init__(self, server, port, channel, nick, reconnect=5):
 		super(GentooBot, self).__init__(server, port, channel, nick, reconnect)
 
-		self.banned_words = None
-		self.greetings = ('Hello %s!', 'Welcome %s!', 'Everybody rejoice! %s is here!')
+		self.admins = load_db(server, "admins")
+		self.banned_words = load_db(server, 'banned_words')
+		self.ig_keywords = load_db(server, 'ig_keywords')
+		if self.ig_keywords == None:
+			self.ig_keywords = [None]
 
+		self.greetings = ('Hello %s!', 'Welcome %s!', 'Everybody rejoice! %s is here!')
 		self.ig_replies = (
 		'Install Gentoo.', 'You know what you should do? you should install gentoo.',
 		'Have you ever heard of this os? its called gentoo and i think you should install it.',
 		'Gentoo, install it motherfucker.')
 
-		self.ig_keywords = ('ubuntu', 'redhat', 'fedora', 'mint', 'debian', 'hurd',
-			'windows', 'mac', 'arch', 'microsoft', 'apple', 'minix',
-			'haiku', 'BeOS', 'TempleOS', 'OSX', 'Plan9', 'Unix', 'SparrowOS',
-			'Wangblows', "linux", "lunix", "archlinux", 'macs', 'os x')
-
 		self.url_pattern = re.compile(r"((?:https?\:\/\/|www\.)(?:[-a-z0-9]+\.)*[-a-z0-9]+.*)")
 
 	def actions(self, channel, user, message):
+		start_new_thread(commands.run, (self, user, message))
+		start_new_thread(self.url_title, (message,))
 		self.installgentoo_reply(user, message)
 		self.bsd_is_dum(user, message)
-		start_new_thread(self.url_title, (message,))
-		start_new_thread(user_commands.run, (self, user, message))
 
 	def installgentoo_reply(self, user, message):
-		for keyword in self.ig_keywords:
-			if re.search(r"\b(%s)\b" % keyword, message, re.I):
-				reply = random.choice(self.ig_replies)
-				self.tell(user, reply)
-				return
+		if self.ig_keywords:
+			for keyword in self.ig_keywords:
+				if re.search(r"\b(%s)\b" % keyword, message, re.I):
+					reply = random.choice(self.ig_replies)
+					self.tell(user, reply)
 
 	def bsd_is_dum(self, user, message):
 		if re.search(r'(^|[^\d.-])bsd\b', message, re.I):

@@ -30,7 +30,7 @@ from config import get_config, save_db, load_db
 class GottaGoFast(Exception): pass
 
 class Commands():
-	def __init__(self, last_pub, last_secret, prefix=':'):
+	def __init__(self, prefix=':'):
 		self.commands = self.get_commands()
 		self.prefix = prefix
 
@@ -46,17 +46,21 @@ class Commands():
 			m = method[3:]
 			help = callable.__doc__
 			commands[m] = {"help":help, "nargs":0,
-					"registered": False}
+					"registered": False, 'admin':False}
 
 			a = getargspec(callable)
 			try:
 				defaults = dict(zip(a.args[-len(a.defaults):],a.defaults))
 			except TypeError:
 				continue
+
 			if 'nargs' in defaults:
 				commands[m]['nargs'] = defaults['nargs']
 			if 'registered' in defaults:
 				commands[m]['registered'] = defaults['registered']
+			if 'admin' in defaults:
+				commands[m]['admin'] = defaults['admin']
+
 		return commands
 
 	def _parse_command(self, msg):
@@ -72,9 +76,14 @@ class Commands():
 
 	def _execute(self, command, user, arguments, bot):
 		"""Execute the method associated with the command."""
+
 		nargs = self.commands[command]['nargs']
 		argslen = len(arguments)
 		registered = self.commands[command]['registered']
+		admin = self.commands[command]['admin']
+
+		if admin and not (self._is_admin(user, bot) and self._is_registered(user, bot)):
+			return "Check your privilege."
 
 		if registered and not self._is_registered(user, bot):
 			return "You must be registered to use that command"
@@ -101,7 +110,8 @@ class Commands():
 			if command == cmd:
 				try:
 					reply = self._execute(command, user, arguments, bot)
-					bot.tell(user, reply)
+					if isinstance(reply, str):
+						bot.tell(user, reply)
 					return
 				except GottaGoFast as e:
 					bot.say("%s, %s" % (user.nick, str(e)))
@@ -114,8 +124,15 @@ class Commands():
 			return True
 		return False
 
+	def _is_admin(self, user, bot):
+		"""Check if a user is an admin."""
+		user = user.nick.lower()
+		if bot.admins == None or not user in bot.admins:
+			return False
+		return True
+
 	def load_db(self, server, database):
-		"""Save a database."""
+		"""Load a database."""
 		if not hasattr(self, database):
 			setattr(self, database, load_db(server, database))
 		return getattr(self, database)
@@ -139,20 +156,23 @@ class Commands():
 			cmd = arguments[0]
 			for command in self.commands:
 				if cmd in (command, self.prefix+command):
-
 					help = self.commands[command]['help']
 					help = re.sub(r'\t', '', re.sub(r'(\n)+', '\n', help))
 
 					if self.commands[command]['registered']:
 						help += "\nNote: You must be registered and logged in "\
 							"to your irc nick to use this command."
+					if self.commands[command]['admin']:
+						help += "\nNote: You must be in my admin list to use "\
+							"this command."
+
 					return "Usage: %s%s" % (self.prefix, help)
 			return 'Unknown command "%s"' % cmd
 
 class UserCommands(Commands):
 	"""User commands."""
 	def __init__(self, last_pub, last_secret, prefix=':'):
-		Commands.__init__(self, last_pub, last_secret, prefix)
+		Commands.__init__(self, prefix)
 		self.lastfm=LastFMNetwork(api_key=last_pub, api_secret=last_secret)
 
 	def do_g(self, user, arguments, bot, nargs=1):
@@ -297,5 +317,58 @@ class UserCommands(Commands):
 		reply = ', '.join(["%s: %s" % (k, v) for k,v in who.items()])
 		return reply
 
+	def do_say(self, user, arguments, bot, nargs=1, admin=True):
+		"""say `something`
+
+		Do i need to explain this?"""
+		bot.say(' '.join(arguments))
+
+	def do_gentoo_trigger(self, user, arguments, bot, nargs=1, admin=True):
+		"""gentoo_trigger `add|del|list` `keywords`
+
+		add|del|list install gentoo trigger keywords
+		You can specify a list of space seprated keywords for the add and dell commands."""
+
+		cmds = ( 'add', 'del', 'list' )
+		cmd = arguments[0]
+		if not cmd.lower() in cmds:
+			return "Unknown argument %s" % cmd
+
+		keywords = arguments[1:]
+
+		if cmd.lower() == 'list':
+			current_keywords = bot.ig_keywords
+			return "install gentoo trigger words are %s."\
+					% ", ".join([str(t).lower() for t in current_keywords])
+		if cmd.lower() == 'add':
+			return self._add_gentoo_trigger(bot, keywords)
+		elif cmd.lower() == 'del':
+			return self._del_gentoo_trigger(bot, keywords)
+
+	def _add_gentoo_trigger(self, bot, keywords):
+		if not keywords:
+			return "You need to specify atleast 1 keyword."
+		bot.ig_keywords = list(set(bot.ig_keywords + keywords))
+		save_db(bot.server, 'ig_keywords', bot.ig_keywords)
+		return "Added to the trigger list %s." % ', '.join(keywords)
+
+	def _del_gentoo_trigger(self, bot, keywords):
+		if not keywords:
+			return "You need to specify atleast 1 keyword."
+
+		# lower all arguments
+		keywords = [i.lower() for i in keywords]
+		new_triggers = []
+		deleted_triggers = []
+
+		for keyword in bot.ig_keywords:
+			if not keyword.lower() in keywords:
+				new_triggers.append(keyword.lower())
+			else:
+				deleted_triggers.append(keyword)
+		bot.ig_keywords = new_triggers
+		save_db(bot.server, 'ig_keywords', bot.ig_keywords)
+		return "Removed from the trigger list %s." % ", ".join(deleted_triggers)
+
 lastfm_conf = get_config('LASTFM')
-user_commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
+commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
