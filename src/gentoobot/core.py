@@ -75,6 +75,8 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 	def who(self, nick, timeout = 5):
 		"""Perform a WHO command on `nick`"""
+		if isinstance(nick, NickMask):
+			nick = nick.nick
 		self.whostatus = 'REQUEST'
 		self.connection.who(nick)
 		n = 0

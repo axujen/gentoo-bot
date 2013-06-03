@@ -13,9 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 from shlex import split
 from urllib import urlencode, urlopen
 from json import loads
+from inspect import getargspec
 
 from pylast import LastFMNetwork, WSError
 from bs4 import BeautifulSoup
@@ -29,31 +31,61 @@ class GottaGoFast(Exception): pass
 
 class Commands():
 	def __init__(self, last_pub, last_secret, prefix=':'):
-		self.commands = {}
+		self.commands = self.get_commands()
 		self.prefix = prefix
-		self.add_command('help', 'help [command]\nHALP!\nSyntax: command '\
-				'`required argument` [optional argument]')
 
-	def add_command(self, command, help, nargs=0):
-		"""A wrapper around add_argument that registers the command."""
-		self.commands[command] = { "help":help, "nargs":nargs }
+	def get_commands(self):
+		"""Get a list of methods that stat with d_"""
+		methods = [m for m in dir(self) if m.startswith('do_')]
+		commands = {}
+
+		for method in methods:
+
+			callable = getattr(self, method)
+
+			m = method[3:]
+			help = callable.__doc__
+			commands[m] = {"help":help, "nargs":0,
+					"registered": False}
+
+			a = getargspec(callable)
+			try:
+				defaults = dict(zip(a.args[-len(a.defaults):],a.defaults))
+			except TypeError:
+				continue
+			if 'nargs' in defaults:
+				commands[m]['nargs'] = defaults['nargs']
+			if 'registered' in defaults:
+				commands[m]['registered'] = defaults['registered']
+		return commands
 
 	def _parse_command(self, msg):
 		"""Parse a message for commands."""
 		if not msg.startswith(self.prefix):
-			raise ValueError
+			return None, None
 
 		arguments = split(msg)
 		cmd = arguments.pop(0)[1:]
 		if cmd in self.commands:
 			return cmd, arguments
-		raise ValueError
+		return None, None
 
 	def _execute(self, command, user, arguments, bot):
 		"""Execute the method associated with the command."""
-		if len(arguments) < self.commands[command]['nargs']:
-			return ":%s requires atleast %s arguments!"\
-					% (command, self.commands[command]['nargs'])
+		nargs = self.commands[command]['nargs']
+		argslen = len(arguments)
+		registered = self.commands[command]['registered']
+
+		if registered and not self._is_registered(user, bot):
+			return "You must be registered to use that command"
+
+		if argslen < nargs:
+			suffix = ''
+			if nargs > 1:
+				suffix = 's'
+			return ":%s requires atleast %s argument%s!\nSee :help %s for more "\
+					"information" % (command, nargs, suffix, command)
+
 		method = 'do_'+command
 		if not hasattr(self, method):
 			return "Woops, it looks like %s is not yet implemented." % command
@@ -61,9 +93,8 @@ class Commands():
 
 	def run(self, bot, user, message):
 		"""Parse the message, if a command is found then execute it."""
-		try:
-			command, arguments = self._parse_command(message)
-		except ValueError:
+		command, arguments = self._parse_command(message)
+		if command == arguments == None:
 			return
 
 		for cmd in self.commands:
@@ -76,19 +107,12 @@ class Commands():
 					bot.say("%s, %s" % (user.nick, str(e)))
 					return
 
-	def do_help(self, user, arguments, bot):
-		"""Print a help message about registered commands."""
-		if not arguments:
-			cmds = ', '.join([self.prefix+cmd for cmd in self.commands])
-			return "Available commands are %s.\nTry %shelp `command` for command "\
-					'specific help.' % (cmds, self.prefix)
-		else:
-			cmd = arguments[0]
-			for command in self.commands:
-				if cmd in (command, self.prefix+command):
-					return "Usage: %s%s"\
-						% (self.prefix, self.commands[command]['help'])
-			return 'Unknown command "%s"' % cmd
+	def _is_registered(self, user, bot):
+		"""Return True if a user is registered for his nick."""
+		who = bot.who(user)
+		if 'r' in who['flags']:
+			return True
+		return False
 
 	def load_db(self, server, database):
 		"""Save a database."""
@@ -101,14 +125,40 @@ class Commands():
 		setattr(self, database, value)
 		save_db(server, database, value)
 
+	def do_help(self, user, arguments, bot):
+		"""help [command]
+
+		Display bot usage help.
+		If [command] is specified then you will get help for that command."""
+
+		if not arguments:
+			cmds = ', '.join([self.prefix+cmd for cmd in self.commands])
+			return "Available commands are %s.\nTry %shelp `command` for command "\
+					'specific help.' % (cmds, self.prefix)
+		else:
+			cmd = arguments[0]
+			for command in self.commands:
+				if cmd in (command, self.prefix+command):
+
+					help = self.commands[command]['help']
+					help = re.sub(r'\t', '', re.sub(r'(\n)+', '\n', help))
+
+					if self.commands[command]['registered']:
+						help += "\nNote: You must be registered and logged in "\
+							"to your irc nick to use this command."
+					return "Usage: %s%s" % (self.prefix, help)
+			return 'Unknown command "%s"' % cmd
+
 class UserCommands(Commands):
 	"""User commands."""
 	def __init__(self, last_pub, last_secret, prefix=':'):
 		Commands.__init__(self, last_pub, last_secret, prefix)
 		self.lastfm=LastFMNetwork(api_key=last_pub, api_secret=last_secret)
 
-	def do_g(self, user, arguments, bot):
-		"""Google command"""
+	def do_g(self, user, arguments, bot, nargs=1):
+		"""g `search query`
+
+		Perform a google search query."""
 		search = ' '.join(arguments)
 		query = urlencode({'q':search})
 		url = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&%s'\
@@ -123,8 +173,10 @@ class UserCommands(Commands):
 		content = BeautifulSoup(result['content']).text
 		return "%s\n%s\n%s" % (link, title, content)
 
-	def do_yt(self, user, arguments, bot):
-		"""Youtube search command"""
+	def do_yt(self, user, arguments, bot, nargs=1):
+		"""yt `search query`
+
+		Perform a youtube search query."""
 		search = ' '.join(arguments)
 		query = urlencode({'q':search})
 		url = urlopen('https://gdata.youtube.com/feeds/api/videos?alt=json&%s'\
@@ -138,13 +190,6 @@ class UserCommands(Commands):
 		link = result['media$group']['media$player'][0]['url'].split('&', 1)[0]
 		title = result['title']['$t']
 		return "%s\n%s" % (link, title)
-
-	def is_registered(self, user, bot):
-		"""Return True if a user is registered for his nick."""
-		who = bot.who(user)
-		if 'r' in who['flags']:
-			return True
-		return False
 
 	def _nick_to_lastfm(self, nick, bot):
 		"""Take a nick string, return the lastfm username registered to it."""
@@ -166,10 +211,10 @@ class UserCommands(Commands):
 				" with a valid lastfm username." % str(user))
 		return user
 
-	def do_fmregister(self, user, arguments, bot):
-		"""Register a users nick to the lastfm users database"""
-		if not self.is_registered(user.nick, bot):
-			return "You must be registered to use this command"
+	def do_fmregister(self, user, arguments, bot, nargs=1, registered=True):
+		"""fmregister `lastfm username`
+
+		Associate your current nick with a lastfm username."""
 		username = self.lastfm.get_user(arguments[0])
 		try:
 			username.get_id()
@@ -197,7 +242,10 @@ class UserCommands(Commands):
 			return "are playing %s." % str(np)
 
 	def do_np(self, user, arguments, bot):
-		"""Show the current playing song in a lastfm profile."""
+		"""np [user]
+
+		Show the song currently playing in your lasftm profile
+		if [user] is specified, it will use that persons lastfm."""
 		if len(arguments) > 0:
 			nick = arguments[0]
 			username = self._nick_to_lastfm(nick, bot)
@@ -208,8 +256,11 @@ class UserCommands(Commands):
 		print('USERNAME IS '+str(username))
 		return "You %s" % (self._now_playing(username))
 
-	def do_compare(self, user, arguments, bot):
-		"""Compare 2 lastfm profiles."""
+	def do_compare(self, user, arguments, bot, nargs=1):
+		"""compare `user` [user2]
+
+		Compare your lasftm profile with `user`
+		If [user2] is specified, i will compare him with `user` instead."""
 		if not len(arguments) > 1:
 			user1 = user.nick
 			user2 = arguments[0]
@@ -235,7 +286,11 @@ class UserCommands(Commands):
 		return("Compatibility between %s and %s is %d%%!\nCommon artists are %s"\
 					% (user1, user2, rating, common_artists))
 
-	def do_whois(self, user, arguments, bot):
+	def do_whois(self, user, arguments, bot, nargs=1):
+		"""whois `nick`
+
+		Perform a whois query on `nick`
+		Why would you want to use such a stupid command?"""
 		who = bot.who(arguments[0])
 		if who == 'REQUEST TIMEOUT':
 			return "Even i don't know who the fuck %s is" % arguments[0]
@@ -244,16 +299,3 @@ class UserCommands(Commands):
 
 lastfm_conf = get_config('LASTFM')
 user_commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
-user_commands.add_command('g', 'g `search_query`\nrun a google search query', 1)
-user_commands.add_command('yt', 'yt `search_query`\nrun a youtube '\
-		'search query', 1)
-user_commands.add_command('fmregister', 'fmregister `lastfm username`'\
-		"\nAssociate your current nick with a lastfm username\nYou must be "\
-		"registered and logged in to use this command", 1)
-user_commands.add_command('np', "np [user]\nshow the song you're "\
-		"playing in your lastfm")
-user_commands.add_command('compare', "compare `user` [user2]\ncompare "\
-		"your lastfm username with another person\nIf two names are given then "\
-		"they will be compared instead", 1)
-user_commands.add_command('whois', 'whois `user`\nRun a whois query, why would '\
-		'you want to do that?', 1)
