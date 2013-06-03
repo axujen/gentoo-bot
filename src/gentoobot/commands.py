@@ -224,4 +224,5 @@ commands.add_command(':say', ':say text\nTell the bot to say things', 1)
 commands.add_command(':info', 'Prints information about the bot.')
 commands.add_command(':g', ':g `search query`\nPerform a google search query.', 1)
 commands.add_command(':yt', ':yt `search query`\nPerform a youtube search query.', 1)
-commands.add_command(':who', ':who `nick`', 1)
+commands.add_command(':who', ':who `nick`\nrun a whois query on nick\n'\
+		'A rather useless command if you ask me.', 1)
