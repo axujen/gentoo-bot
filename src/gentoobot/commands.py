@@ -208,7 +208,9 @@ class user_commands(commands):
 
 	def do_who(self, arguments, event, bot):
 		"""docstring for do_who"""
-		return str(bot.who(arguments[0]))
+		reply = bot.who(arguments[0])
+		reply_string = " | ".join(["%s: %s" % (k,v) for k,v in reply.items()])
+		return reply_string
 
 
 commands = user_commands()
