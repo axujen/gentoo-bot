@@ -18,6 +18,7 @@ from urllib import urlencode, urlopen
 from json import loads
 
 from pylast import LastFMNetwork, WSError
+from bs4 import BeautifulSoup
 
 from gentoobot.config import get_config
 from config import get_config, save_db, load_db
@@ -113,10 +114,13 @@ class UserCommands(Commands):
 				% query)
 		response = loads(url.read())
 		try:
-			result = response['responseData']['results'][0]['unescapedUrl']
+			result = response['responseData']['results'][0]
 		except (KeyError, IndexError):
 			return 'No results found for "%s"' % (search)
-		return result
+		link = result['unescapedUrl']
+		title = BeautifulSoup(result['title']).text
+		content = BeautifulSoup(result['content']).text
+		return "%s\n%s\n%s" % (link, title, content)
 
 	def do_yt(self, user, arguments, bot):
 		"""Youtube search command"""
@@ -126,11 +130,13 @@ class UserCommands(Commands):
 				% query)
 		response = loads(url.read())
 		try:
-			result = response['feed']['entry'][0]['media$group']['media$player'][0]['url'].split('&', 1)[0]
+			result = response['feed']['entry'][0]#['media$group']['media$player'][0]['url'].split('&', 1)[0]
 		except (KeyError, IndexError):
 			print('No results found!')
 			return 'No results found for "%s"' % search
-		return result
+		link = result['media$group']['media$player'][0]['url'].split('&', 1)[0]
+		title = result['title']['$t']
+		return "%s\n%s" % (link, title)
 
 	def is_registered(self, user, bot):
 		"""Return True if a user is registered for his nick."""
