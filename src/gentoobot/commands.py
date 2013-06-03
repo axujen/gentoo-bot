@@ -13,216 +13,231 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from argparse import ArgumentParser, REMAINDER
+from shlex import split
+from urllib import urlencode, urlopen
 from json import loads
-from urllib.parse import urlencode
-from urllib.request import urlopen
 
-from pylast import LastFMNetwork
-from pylast import WSError
-import gentoobot.config as config
+from pylast import LastFMNetwork, WSError
 
-# Lastfm instance
-last_opt = config.get_conf('lastfm')
+from gentoobot.config import get_config
+from config import get_config, save_db, load_db
 
-class commands(object):
-	def __init__(self):
-		self.parser = ArgumentParser(prefix_chars=':', add_help=False)
+# Raised when you want to force a method to stop executing a command and print
+# the output of this exception
+class GottaGoFast(Exception): pass
+
+class Commands():
+	def __init__(self, last_pub, last_secret, prefix=':'):
 		self.commands = {}
-		self.lastfm = LastFMNetwork(api_key = last_opt['api_pub'],
-				api_secret = last_opt['api_secret'])
+		self.prefix = prefix
+		self.add_command('help', 'Show this help message. Duh!')
 
 	def add_command(self, command, help, nargs=0):
-		"""docstring for add_command"""
-		self.parser.add_argument(command, help=help, dest=command[1:],
-				nargs=REMAINDER)
-		self.commands[command[1:]] = (help, nargs)
+		"""A wrapper around add_argument that registers the command."""
+		self.commands[command] = { "help":help, "nargs":nargs }
 
-	def _parse_commands(self, message):
-		"""docstring for parse_commands"""
-		cmds = vars(self.parser.parse_known_args(message.split())[0])
-		for cmd in cmds:
-			if not cmds[cmd] == None:
-				return cmd, cmds[cmd]
-		else:
+	def _parse_command(self, msg):
+		"""Parse a message for commands."""
+		if not msg.startswith(self.prefix):
 			raise ValueError
 
-	def exec_command(self, event, bot):
-		msg = event.arguments[0]
+		arguments = split(msg)
+		cmd = arguments.pop(0)[1:]
+		if cmd in self.commands:
+			return cmd, arguments
+		raise ValueError
+
+	def _execute(self, command, user, arguments, bot):
+		"""Execute the method associated with the command."""
+		if len(arguments) < self.commands[command]['nargs']:
+			return ":%s requires atleast %s arguments!"\
+					% (command, self.commands[command]['nargs'])
+		method = 'do_'+command
+		if not hasattr(self, method):
+			return "Woops, it looks like %s is not yet implemented." % command
+		return getattr(self, method)(user, arguments, bot)
+
+	def run(self, bot, user, message):
+		"""Parse the message, if a command is found then execute it."""
 		try:
-			command, arguments = self._parse_commands(msg)
+			command, arguments = self._parse_command(message)
 		except ValueError:
 			return
 
 		for cmd in self.commands:
 			if command == cmd:
-				return self._execute(command, arguments, event, bot)
-		raise ValueError('Unknown command %s' % command)
+				try:
+					reply = self._execute(command, user, arguments, bot)
+					bot.tell(user, reply)
+					return
+				except GottaGoFast as e:
+					bot.say("%s, %s" % (user.nick, str(e)))
+					return
 
-	def _execute(self, command, arguments, event, bot):
-		"""docstring for execute"""
-		if len(arguments) < self.commands[command][1]:
-			return "Not enough arguments!"
-
-		do_cmd = 'do_'+command
-		return getattr(self, do_cmd)(arguments, event, bot)
-
-	def do_help(self, arguments, event, bot):
-		"""docstring for do_help"""
+	def do_help(self, user, arguments, bot):
+		"""Print a help message about registered commands."""
 		if not arguments:
-			cmds = ', '.join([':'+cmd for cmd in self.commands.keys()])
-			return 'Available commands are: %s.\nTry :help command for command'\
-					' specific help.' % cmds
+			cmds = ', '.join([self.prefix+cmd for cmd in self.commands])
+			return "Available commands are %s.\nTry %shelp `command` for command "\
+					'specific help.' % (cmds, self.prefix)
 		else:
 			cmd = arguments[0]
 			for command in self.commands:
-				if command in (cmd, cmd[1:]):
-					return self.commands[command][0]
-			return "Unknown command %s!" % cmd
+				if cmd in (command, self.prefix+command):
+					return "Usage: %s%s"\
+						% (self.prefix, self.commands[command]['help'])
+			return 'Unknown command "%s"' % cmd
 
-class user_commands(commands):
-	def __init__(self):
-		super().__init__()
-		self.add_command(':help', 'Show the help message. duh.')
-		lastfm_users = config.db_load('lastfm_users')
-		if lastfm_users == False:
-			self.lastfm_users = {}
-		else:
-			self.lastfm_users = lastfm_users
+	def load_db(self, server, database):
+		"""Save a database."""
+		if not hasattr(self, database):
+			setattr(self, database, load_db(server, database))
+		return getattr(self, database)
 
-	def do_compare(self, arguments, event, bot):
-		"""Compare 2 lastfm users."""
-		if len(arguments) > 1:
-			comparer = arguments[1]
-		elif event.source.nick.lower() in self.lastfm_users:
-			comparer = self.lastfm_users[event.source.nick.lower()]
-		else:
-			comparer = event.source.nick
+	def update_db(self, server, database, value):
+		"""Replace `database` by a new `value` and save the changes"""
+		setattr(self, database, value)
+		save_db(server, database, value)
 
-		user = arguments[0]
-		if user.lower() in self.lastfm_users:
-			user = self.lastfm_users[user.lower()]
-		try:
-			comparer = self.lastfm.get_user(comparer)
-			compare = comparer.compare_with_user(user)
-		except WSError as e:
-			return str(e)
-		rating = float(compare[0])*100
-		rating = int(rating)
-		common_artists = compare[1]
-		if common_artists:
-			common_artists = ', '.join([artist.name for artist in compare[1]])
-		else:
-			common_artists = 'None!'
+class UserCommands(Commands):
+	"""User commands."""
+	def __init__(self, last_pub, last_secret, prefix=':'):
+		Commands.__init__(self, last_pub, last_secret, prefix)
+		self.lastfm=LastFMNetwork(api_key=last_pub, api_secret=last_secret)
 
-		return("Compatibility between %s and %s is %d%%! Common artists are: %s"\
-					% (comparer, user, rating, common_artists))
-
-	def do_np(self, arguments, event, bot):
-		"""Playing current or last playing song by the user."""
-		if len(arguments):
-			user = arguments[0]
-			if user.lower() in self.lastfm_users:
-				user = self.lastfm_users[user.lower()]
-
-		elif event.source.nick.lower() in self.lastfm_users:
-			user = self.lastfm_users[event.source.nick.lower()]
-		else:
-			user = event.source.nick
-
-		user = self.lastfm.get_user(user)
-		try:
-			user.get_id()
-		except WSError as e:
-			return str(e)
-		except IndexError:
-			return "I usually crash here, but axujen is so great that now i "\
-					"don't, he still doesn't know why i crash or how to fix it."
-
-		np = user.get_now_playing()
-		if not np:
-			last_song = user.get_recent_tracks(2)[0][0]
-			return("%s last played: %s" % (user, last_song))
-		else:
-			return("%s is playing: %s" % (user, np))
-
-	def do_fm_register(self, arguments, event, bot):
-		"""Register a nick to a username."""
-		source = event.source.nick
-		user = self.lastfm.get_user(arguments[0])
-		try:
-			user.get_id()
-		except WSError as e:
-			return str(e)
-
-		self.lastfm_users[source.lower()] = user.name
-		config.db_save("lastfm_users", self.lastfm_users)
-
-		return "%s registered to http://lastfm.com/user/%s.\nTo update username "\
-				"reissue this command." % (source, user)
-
-	def do_say(self, arguments, event, bot):
-		"""Say something."""
-		msg = ' '.join(arguments)
-		return msg
-
-	def do_info(self, arguments, event, bot):
-		"""information about the script."""
-		return 'GentooBot is an irc bot written in python by axujen to annoy users with '\
-				'install gentoo messages.\nOther features have been added to '\
-				'give users incentive to not put the bot on their ignore list.\n'\
-				'Sauce: <https://github.com/axujen/gentoo-bot>'
-
-	def do_g(self, arguments, event, bot):
+	def do_g(self, user, arguments, bot):
 		"""Google command"""
 		search = ' '.join(arguments)
 		query = urlencode({'q':search})
 		url = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&%s'\
 				% query)
-		print('Sending search query %s' % url.url)
-		response = loads(url.read().decode())
+		response = loads(url.read())
 		try:
 			result = response['responseData']['results'][0]['unescapedUrl']
 		except (KeyError, IndexError):
-			print('No results found!')
-			return '%s: No results found for "%s"' % (event.source.nick, search)
-		print('Search result %s' % result)
-		return "%s: %s" % (event.source.nick, result)
+			return 'No results found for "%s"' % (search)
+		return result
 
-	def do_yt(self, arguments, event, bot):
+	def do_yt(self, user, arguments, bot):
 		"""Youtube search command"""
 		search = ' '.join(arguments)
 		query = urlencode({'q':search})
 		url = urlopen('https://gdata.youtube.com/feeds/api/videos?alt=json&%s'\
 				% query)
-
-		print('Sending query %s' % url.url)
-		response = loads(url.read().decode())
+		response = loads(url.read())
 		try:
 			result = response['feed']['entry'][0]['media$group']['media$player'][0]['url'].split('&', 1)[0]
 		except (KeyError, IndexError):
 			print('No results found!')
-			return '%s: No results found for "%s"' % (event.source.nick, search)
-		print("Search result %s" % result)
-		return "%s: %s" % (event.source.nick, result)
+			return 'No results found for "%s"' % search
+		return result
 
-	def do_who(self, arguments, event, bot):
-		"""docstring for do_who"""
-		reply = bot.who(arguments[0])
-		reply_string = " | ".join(["%s: %s" % (k,v) for k,v in reply.items()])
-		return reply_string
+	def is_registered(self, user, bot):
+		"""Return True if a user is registered for his nick."""
+		who = bot.who(user)
+		if 'r' in who['flags']:
+			return True
+		return False
 
+	def _nick_to_lastfm(self, nick, bot):
+		"""Take a nick string, return the lastfm username registered to it."""
 
-commands = user_commands()
-commands.add_command(':np', ':np [user]\nThis command will show the current song '\
-		'playing in your lastfm profile.\nIf `user` is specified it will use that.', 0)
-commands.add_command(':compare', ":compare `user1` `user2`\nThis command will "\
-		"compare user1 to user2's lastfm profiles", 1)
-commands.add_command(':fm_register', 'usage: :fm_register `lastfm username`\n'\
-		'This command will associate your current nick with a lastfm username.', 1)
-commands.add_command(':say', ':say text\nTell the bot to say things', 1)
-commands.add_command(':info', 'Prints information about the bot.')
-commands.add_command(':g', ':g `search query`\nPerform a google search query.', 1)
-commands.add_command(':yt', ':yt `search query`\nPerform a youtube search query.', 1)
-commands.add_command(':who', ':who `nick`\nrun a whois query on nick\n'\
-		'A rather useless command if you ask me.', 1)
+		lastfm_users = self.load_db(bot.server, 'lastfm_users')
+		if lastfm_users == None:
+			lastfm_users = {}
+
+		if nick.lower() in lastfm_users:
+			user = lastfm_users[nick.lower()]
+		else:
+			user = nick
+
+		user = self.lastfm.get_user(user)
+		try:
+			user.get_id()
+		except WSError as e:
+			raise GottaGoFast("Unknown name %s\nTry registering using fmregister"\
+				" with a valid lastfm username." % str(user))
+		return user
+
+	def do_fmregister(self, user, arguments, bot):
+		"""Register a users nick to the lastfm users database"""
+		if not self.is_registered(user.nick, bot):
+			return "You must be registered to use this command"
+		username = self.lastfm.get_user(arguments[0])
+		try:
+			username.get_id()
+		except WSError as e:
+			return str(e)
+
+		username = str(username)
+		lastfm_users = self.load_db(bot.server, 'lastfm_users')
+		if lastfm_users == None:
+			lastfm_users = {}
+		lastfm_users[user.nick.lower()] = username
+		self.update_db(bot.server, 'lastfm_users', lastfm_users)
+		return "You have been associated with http://last.fm/user/%s" % username
+
+	def _now_playing(self, user):
+		"""Get the current playing song of a lastfm user"""
+		try:
+			np = user.get_now_playing()
+		except IndexError:
+			raise GottaGoFast("User %s has not scrobbled anything yet." % user)
+		if not np:
+			last_song = user.get_recent_tracks(2)[0][0]
+			return "last played %s." % last_song
+		else:
+			return "are playing %s." % str(np)
+
+	def do_np(self, user, arguments, bot):
+		"""Show the current playing song in a lastfm profile."""
+		if len(arguments) > 0:
+			nick = arguments[0]
+			username = self._nick_to_lastfm(nick, bot)
+			return "%s %s" % (nick, self._now_playing(username).replace(
+											'are playing', 'is playing'))
+
+		username = self._nick_to_lastfm(user.nick, bot)
+		print('USERNAME IS '+str(username))
+		return "You %s" % (self._now_playing(username))
+
+	def do_compare(self, user, arguments, bot):
+		"""Compare 2 lastfm profiles."""
+		if not len(arguments) > 1:
+			user1 = user.nick
+			user2 = arguments[0]
+			comparer = self._nick_to_lastfm(user1, bot)
+			compared_to = self._nick_to_lastfm(user2, bot)
+		else:
+			user1 = arguments[0]
+			user2 = arguments[1]
+			comparer = self._nick_to_lastfm(user1, bot)
+			compared_to = self._nick_to_lastfm(user2, bot)
+
+		if comparer == compared_to:
+			return "Try giving me different users smartass."
+
+		diff = comparer.compare_with_user(compared_to)
+		rating = float(diff[0])*100
+		rating = int(rating)
+		common_artists = diff[1]
+		if common_artists:
+			common_artists = ', '.join([artist.name for artist in diff[1]])
+		else:
+			common_artists = 'None!'
+		return("Compatibility between %s and %s is %d%%!\nCommon artists are %s"\
+					% (user1, user2, rating, common_artists))
+
+lastfm_conf = get_config('LASTFM')
+user_commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
+user_commands.add_command('g', 'g `search_query`\nrun a google search query', 1)
+user_commands.add_command('yt', 'yt `search_query`\nrun a youtube '\
+		'search query', 1)
+user_commands.add_command('fmregister', 'fmregister `lastfm username`'\
+		"\nAssociate your current nick with a lastfm username\nYou must be "\
+		"registered and logged in to use this command", 1)
+user_commands.add_command('np', "np [user]\nshow the song you're "\
+		"playing in your lastfm")
+user_commands.add_command('compare', "compare `user` [user2]\ncompare "\
+		"your lastfm username with another person\nIf two names are given then "\
+		"they will be compared instead", 1)

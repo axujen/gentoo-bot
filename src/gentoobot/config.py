@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 # -*- coding: UTF-8 -*-
 # © Copyright 2013 axujen, <axujen at gmail.com>. All Rights Reserved.
 # This program is free software: you can redistribute it and/or modify
@@ -13,59 +14,96 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from configparser import ConfigParser
-import json
 import os.path
-from os import mkdir
-
-config_folder = "$HOME/.gentoobot/"
-
-# Is there a simpler way?
-config_folder = os.path.expanduser(
-		os.path.expandvars(
-			os.path.normpath(config_folder)))
-
-configrc = os.path.join(config_folder, 'config')
-config = ConfigParser()
-
-# If the config dir doesn't exist make it.
-if not os.path.exists(config_folder):
-	mkdir(config_folder)
-# If its not a folder raise an error.
-elif not os.path.isdir(config_folder):
-	raise ValueError("Configuration folder must be a folder!")
+from os import makedirs
+from ConfigParser import ConfigParser
+from argparse import ArgumentParser
+import json
 
 # Config defaults.
-config['LASTFM'] = {
-		'api_pub'	: '1af49b4138e72da18bae9e77f1af46aa',
-		'api_secret': '3421bd09678c3a191310c5433017e4a6',}
-config['CONNECTION'] = {
-		'server':	'irc.installgentoo.com',
-		'port'	:	'6667',
-		'nick'	:	'GentooTestBot',
-		'channel':	'#/g/test',}
+config = ConfigParser()
 
-def get_conf(section):
-	"""General method to read configparser config file."""
-	if os.path.exists(configrc):
-		config.read(configrc)
+config.add_section('LASTFM')
+config.set('LASTFM', 'api_pub',		'1af49b4138e72da18bae9e77f1af46aa')
+config.set('LASTFM', 'api_secret',	'3421bd09678c3a191310c5433017e4a6')
+
+config.add_section('CONNECTION')
+config.set('CONNECTION', 'port',	'6667')
+config.set('CONNECTION', 'server',	'irc.installgentoo.com')
+config.set('CONNECTION', 'nick',	'GentooTestBot2')
+config.set('CONNECTION', 'channel',	'#/g/test')
+
+# Arguments
+arguments = ArgumentParser()
+arguments.add_argument('-s', '--server', dest='server', help='irc server to connect to')
+arguments.add_argument('-p', '--port', type=int, dest='port', help='server port')
+arguments.add_argument('-c', '--channel', dest='channel', help='channel to join')
+arguments.add_argument('-n', '--nick', dest='nick', help="bot's nick")
+arguments.add_argument('--config', dest='config', default='$HOME/.gentoobot',
+	help='specify an alternative config folder')
+
+
+def get_config(section):
+	"""Return a dictionary with options necessary for running the bot"""
+
+	args = vars(arguments.parse_args())
+	config_base = os.path.normpath(os.path.expanduser(os.path.expandvars(args['config'])))
+
+	if not os.path.exists(config_base):
+		makedirs(config_base)
+
+	if not os.path.isdir(config_base):
+		raise ValueError('%s is not a directory' % config_base)
+
+	configfile = os.path.join(config_base, 'config.cfg')
+
+	if not os.path.exists(configfile):
+		print('Creating new configuration file "%s"' % configfile)
+		with open(configfile, 'wb') as f:
+			config.write(f)
 	else:
-		with open(configrc, 'w') as configfile:
-			config.write(configfile)
-	return dict(config[section.upper()])
+		config.read(configfile)
 
-def db_save(file, object):
-	"""Save a `object` into a json `file`"""
-	file = os.path.join(config_folder, file)
-	if not os.path.exists(file):
-		open(file, 'a').close()
-	with open(file, 'w') as f:
-		json.dump(object, f, indent=4)
+	opt = dict(config.items(section.upper()))
 
-def db_load(file):
-	"""Load a an object from a json `file`"""
-	file = os.path.join(config_folder, file)
-	if not os.path.exists(file):
-		return False
-	with open(file, 'r') as f:
-		return json.load(f)
+	for arg in args:
+		if not args[arg] == None:
+			opt[arg] = args[arg]
+
+	return opt
+
+def save_db(server, db, object):
+	"""Save a database (json) inside a folder."""
+	config = vars(arguments.parse_args())['config']
+	config = os.path.normpath(os.path.expanduser(os.path.expandvars(config)))
+
+	folder = os.path.join(config, server)
+
+	if not os.path.exists(folder):
+		print('Creating new server db folder "%s"' % folder)
+		makedirs(folder)
+
+	if not os.path.isdir(folder):
+		raise ValueError('"%s" is not a directory' % folder)
+
+	db_file = os.path.join(folder, db)
+
+	if os.path.exists(db_file) and not os.path.isfile(db_file):
+		raise ValueError('"%s" is not a file' % db_file)
+
+	with open(db_file, 'w') as db_file:
+		json.dump(object, db_file)
+
+def load_db(server, db):
+	"""Load a json database."""
+	config = vars(arguments.parse_args())['config']
+	config = os.path.normpath(os.path.expanduser(os.path.expandvars(config)))
+
+	db_file = os.path.join(config, server, db)
+	print('Loading '+db_file)
+
+	if not os.path.exists(db_file) or not os.path.isfile(db_file):
+		return None
+
+	with open(db_file, 'r') as db_file:
+		return json.load(db_file)

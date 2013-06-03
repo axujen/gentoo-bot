@@ -24,9 +24,10 @@ users a reason not to put the bot on their ignore list.
 	  -p, --port	port	"server port."
 	  -n, --nick	nick	"bot's name."
 	  -c, --channel	channel	"channel to connect to."
+	  --config		dif		"alternative config directory."
 
 #Requirements:
-* The bot is only being tested under GNU/Linux with python3.2 (Tested running under 3.3 aswell)
+* The bot is only being tested under GNU/Linux and FreeBSD 9 with python2.7
 * [python-irc](https://pypi.python.org/pypi/irc/)
 * [pylast](https://pypi.python.org/pypi/pylast)
 * [BeautifulSoup4](http://www.crummy.com/software/BeautifulSoup/)
