@@ -50,7 +50,7 @@ class GentooBot(irc.bot.SingleServerIRCBot):
 	def on_pubmsg(self, c, e):
 		self.installgentoo_reply(c, e)
 		self.bsd_is_dum(c, e)
-		self.resolve_url(c, e)
+		start_new_thread(self.resolve_url, (c, e))
 		start_new_thread(self.do_command, (c, e))
 
 	def on_whoreply(self, c, e):
