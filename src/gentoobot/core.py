@@ -117,6 +117,7 @@ class GentooBot(GentooBotFrame):
 		if self.ig_keywords == None:
 			self.ig_keywords = [None]
 
+		self.replies = self._get_replies()
 		self.greetings = ('Hello %s!', 'Welcome %s!', 'Everybody rejoice! %s is here!')
 		self.ig_replies = (
 		'Install Gentoo.', 'You know what you should do? you should install gentoo.',
@@ -128,28 +129,7 @@ class GentooBot(GentooBotFrame):
 	def actions(self, channel, user, message):
 		start_new_thread(commands.run, (self, user, message))
 		start_new_thread(self.url_title, (message,))
-		self.installgentoo_reply(user, message)
-		self.bsd_is_dum(user, message)
-		self.implying(user, message)
-
-	def installgentoo_reply(self, user, message):
-		if self.ig_keywords:
-			for keyword in self.ig_keywords:
-				if re.search(r"\b(%s)\b" % keyword, message, re.I):
-					reply = random.choice(self.ig_replies)
-					self.tell(user, reply)
-					return
-
-	def bsd_is_dum(self, user, message):
-		if re.search(r'(^|[^\d.-])bsd\b', message, re.I):
-			self.tell(user, 'BSD is dum.')
-			return
-
-	def implying(self, user, message):
-		"""implying implications"""
-		if message.startswith(('implying ', '>implying ')):
-			self.tell(user, 'implying implications')
-			return
+		self.reply(user, message)
 
 	def url_title(self, msg):
 		"""if found, resolve the title of a url in the message."""
@@ -182,6 +162,33 @@ class GentooBot(GentooBotFrame):
 			if soup.title:
 				title = soup.title.string
 				return self.say( "Page title: %s" % title)
+
+	def reply(self, user, message):
+		"""Reply to something"""
+		for reply in self.replies:
+			msg = getattr(self, reply)(message)
+			if isinstance(msg, str):
+				return self.tell(user, msg)
+
+	def _get_replies(self):
+		return sorted([reply for reply in dir(self) if reply.startswith('reply_')])
+
+	def reply_1_installgentoo(self, message):
+		if self.ig_keywords:
+			for keyword in self.ig_keywords:
+				if re.search(r"\b(%s)\b" % keyword, message, re.I):
+					reply = random.choice(self.ig_replies)
+					return reply
+
+	def reply_2_bsd(self, message):
+		if re.search(r'(^|[^\d.-])bsd\b', message, re.I):
+			return "BSD is dum."
+
+	def reply_3_implying(self, message):
+		"""implying implications"""
+		if message.startswith(('implying', '>implying')):
+			return 'Implying implications.'
+
 
 def main():
 	opt = get_config('CONNECTION')
