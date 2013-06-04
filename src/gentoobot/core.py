@@ -34,12 +34,13 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 	def __init__(self, server, port, channel, nick, password, reconnect, verbose):
 		server_spec = irc.bot.ServerSpec(server, int(port))
-		super(GentooBotFrame, self).__init__([server_spec], nick, nick, reconnection_interval=int(reconnect))
+		super(GentooBotFrame, self).__init__([server_spec], nick, nick, reconnection_interval=reconnect)
 
 		self.verbose = verbose
 		self.reconnect = reconnect
-		self.channel = channel
+		self.chans = [channel]
 		self.nick = nick
+
 		# This is the bots original nick, used for ghosting.
 		self.my_nick = nick
 		self.server = server
@@ -54,8 +55,8 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		if self.password:
 			self._identify()
 
-		print('Joining %s' % self.channel)
-		c.join(self.channel)
+		for channel in self.chans:
+			self.join(channel)
 
 	def _identify(self):
 		"""Identify the bot"""
@@ -69,7 +70,6 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.actions(channel, user, message)
 
 	def on_privmsg(self, c, e):
-		"""docstring for on_privmsg"""
 		self.event_logger(e)
 
 	def on_action(self, c, e):
@@ -112,8 +112,22 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		"""autorejoin when kicked."""
 		self.event_logger(e)
 		time.sleep(self.reconnect)
-		print('Rejoining %s' % self.channel)
-		c.join(self.channel)
+		self.join(e.target)
+
+	def join(self, channel):
+		print('Joining %s' % channel)
+		self.connection.join(channel)
+
+		if not channel in self.chans:
+			self.chans.append(channel)
+
+	def part(self, channel):
+		"""Leave a channel"""
+		print('Leaving %s' % channel)
+		self.connection.part(channel)
+
+		if channel in self.chans:
+			self.chans.remove(channel)
 
 	def on_whoreply(self, c, e):
 		args = e.arguments
@@ -158,19 +172,19 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 		return self.wholist[nick.lower()]
 
-	def say(self, message):
+	def say(self, channel, message):
 		"""Print message in the channel"""
 		message = re.sub(r'\n', ' | ', message)
-		print('->[%s] %s' % (self.channel, message))
-		self.connection.privmsg(self.channel, message)
+		print('->[%s] %s' % (channel, message))
+		self.connection.privmsg(channel, message)
 
-	def tell(self, user, message):
+	def tell(self, channel, user, message):
 		"""Tell a user a message"""
 
 		if isinstance(user, NickMask):
 			user = user.nick
 
-		self.say("%s, %s" % (user, message))
+		self.say(channel, "%s, %s" % (user, message))
 
 class GentooBot(GentooBotFrame):
 	"""The actual bot"""
@@ -202,14 +216,14 @@ class GentooBot(GentooBotFrame):
 			pass
 
 	def actions(self, channel, user, message):
-		start_new_thread(commands.run, (self, user, message))
+		start_new_thread(commands.run, (self, channel, user, message))
 		try:
-			self.url_title(message)
-			self.reply(user, message)
+			self.url_title(channel, message)
+			self.reply(channel, user, message)
 		except Exception as e:
 			print(str(e))
 
-	def url_title(self, msg):
+	def url_title(self, channel, msg):
 		"""if found, resolve the title of a url in the message."""
 		url_pattern = self.url_pattern
 		if re.search(url_pattern, msg):
@@ -236,19 +250,19 @@ class GentooBot(GentooBotFrame):
 				message = 'Board: /%s/ | R: %s, I: %s | Subject: %s | Comment: %s'\
 						% (board, replies, images, str(subject), str(comment))
 
-				return self.say(message)
+				return self.say(channel, message)
 
 			soup = BeautifulSoup(urlopen(url))
 			if soup.title:
 				title = soup.title.string
-				return self.say( "Page title: %s" % title)
+				return self.say(channel, "[URI] %s" % title)
 
-	def reply(self, user, message):
+	def reply(self, channel, user, message):
 		"""Reply to something"""
 		for reply in self.replies:
 			msg = getattr(self, reply)(message)
 			if isinstance(msg, str):
-				return self.tell(user, msg)
+				return self.tell(channel, user, msg)
 
 	def _get_replies(self):
 		return sorted([reply for reply in dir(self) if reply.startswith('reply_')])
@@ -273,7 +287,7 @@ def main():
 	opt = get_config('CONNECTION')
 	misc = get_config('MISC')
 	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'],
-			password=opt['password'], reconnect=misc['reconnect'],
+			password=opt['password'], reconnect=int(misc['reconnect']),
 			verbose=misc['verbose'])
 	print('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 

@@ -99,7 +99,7 @@ class Commands():
 			return "Woops, it looks like %s is not yet implemented." % command
 		return getattr(self, method)(user, arguments, bot)
 
-	def run(self, bot, user, message):
+	def run(self, bot, channel, user, message):
 		"""Parse the message, if a command is found then execute it."""
 		command, arguments = self._parse_command(message)
 		if command == arguments == None:
@@ -110,7 +110,7 @@ class Commands():
 				try:
 					reply = self._execute(command, user, arguments, bot)
 					if not reply == None:
-						bot.tell(user, reply)
+						bot.tell(channel, user, reply)
 					return
 				except GottaGoFast as e:
 					bot.say("%s, %s" % (user.nick, str(e)))
@@ -175,7 +175,7 @@ class UserCommands(Commands):
 		self.lastfm=LastFMNetwork(api_key=last_pub, api_secret=last_secret)
 
 	def do_g(self, user, arguments, bot, nargs=1):
-		"""g `search query`
+		"""g ``search query``
 
 		Perform a google search query."""
 		search = ' '.join(arguments)
@@ -193,7 +193,7 @@ class UserCommands(Commands):
 		return "%s\n%s\n%s" % (link, title, content)
 
 	def do_yt(self, user, arguments, bot, nargs=1):
-		"""yt `search query`
+		"""yt ``search query``
 
 		Perform a youtube search query."""
 		search = ' '.join(arguments)
@@ -231,7 +231,7 @@ class UserCommands(Commands):
 		return user
 
 	def do_fmregister(self, user, arguments, bot, nargs=1, registered=True):
-		"""fmregister `lastfm username`
+		"""fmregister ``lastfm username``
 
 		Associate your current nick with a lastfm username."""
 		username = self.lastfm.get_user(arguments[0])
@@ -276,10 +276,10 @@ class UserCommands(Commands):
 		return "You %s" % (self._now_playing(username))
 
 	def do_compare(self, user, arguments, bot, nargs=1):
-		"""compare `user` [user2]
+		"""compare ``user`` [user2]
 
-		Compare your lasftm profile with `user`
-		If [user2] is specified, i will compare him with `user` instead."""
+		Compare your lasftm profile with ``user``
+		If [user2] is specified, i will compare him with ``user`` instead."""
 		if not len(arguments) > 1:
 			user1 = user.nick
 			user2 = arguments[0]
@@ -306,9 +306,9 @@ class UserCommands(Commands):
 					% (user1, user2, rating, common_artists))
 
 	def do_whois(self, user, arguments, bot, nargs=1):
-		"""whois `nick`
+		"""whois ``nick``
 
-		Perform a whois query on `nick`
+		Perform a whois query on ``nick``
 		Why would you want to use such a stupid command?"""
 		who = bot.who(arguments[0])
 		if who == 'REQUEST TIMEOUT':
@@ -317,13 +317,13 @@ class UserCommands(Commands):
 		return reply
 
 	def do_say(self, user, arguments, bot, nargs=1, admin=True):
-		"""say `something`
+		"""say ``something``
 
 		Do i need to explain this?"""
 		bot.say(' '.join(arguments))
 
 	def do_gentoo_trigger(self, user, arguments, bot, nargs=1, admin=True):
-		"""gentoo_trigger `add|del|list` `keywords`
+		"""gentoo_trigger ``add|del|list`` ``keywords``
 
 		add|del|list install gentoo trigger keywords
 		You can specify a list of space seprated keywords for the add and dell commands."""
@@ -368,6 +368,28 @@ class UserCommands(Commands):
 		bot.ig_keywords = new_triggers
 		save_db(bot.server, 'ig_keywords', bot.ig_keywords)
 		return "Removed from the trigger list %s." % ", ".join(deleted_triggers)
+
+	def do_join(self, user, arguments, bot, nargs=1, admin=True):
+		"""join ``channels``
+
+		Join the specified channels."""
+		channels = [ch for ch in arguments if ch.startswith("#")]
+
+		for channel in channels:
+			bot.join(channel)
+
+		return "Joined %s" % ', '.join(channels)
+
+	def leave(self, user, arguments, bot, nargs=1, admin=True):
+		"""part ``channels``
+
+		Part the specified channels."""
+		channels = [ch for ch in arguments if ch.startswith("#")]
+
+		for channel in channels:
+			bot.part(channel)
+
+		return "Leaving %s" % ', '.join(channels)
 
 lastfm_conf = get_config('LASTFM')
 commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
