@@ -172,12 +172,18 @@ class GentooBot(GentooBotFrame):
 
 	def event_logger(self, event):
 		"""Log an event"""
-		log(self.server, event, self.verbose)
+		try:
+			log(self.server, event, self.verbose)
+		except:
+			pass
 
 	def actions(self, channel, user, message):
 		start_new_thread(commands.run, (self, user, message))
-		start_new_thread(self.url_title, (message,))
-		self.reply(user, message)
+		try:
+			self.url_title(message)
+			self.reply(user, message)
+		except:
+			pass
 
 	def url_title(self, msg):
 		"""if found, resolve the title of a url in the message."""
