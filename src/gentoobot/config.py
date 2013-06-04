@@ -34,9 +34,10 @@ config.set('CONNECTION', 'port',	'6667')
 config.set('CONNECTION', 'server',	'irc.installgentoo.com')
 config.set('CONNECTION', 'nick',	'GentooTestBot')
 config.set('CONNECTION', 'channel',	'#/g/test')
+config.set('CONNECTION', 'password', 'None')
 
 config.add_section('MISC')
-config.set('MISC',	'verbose',	'false')
+config.set('MISC',	'verbose',	'False')
 config.set('MISC',	'reconnect', '5')
 
 # Arguments
@@ -45,13 +46,13 @@ arguments.add_argument('-s', '--server', dest='server', help='irc server to conn
 arguments.add_argument('-p', '--port', type=int, dest='port', help='server port')
 arguments.add_argument('-c', '--channel', dest='channel', help='channel to join')
 arguments.add_argument('-n', '--nick', dest='nick', help="bot's nick")
+arguments.add_argument('--pass', dest='password', help='Bots login password')
 arguments.add_argument('-r', '--reconnect', dest='reconnect', type=int,
 		help='reconnection interval when kicked from a channel or when disconnected')
 arguments.add_argument('-v', '--verbose', dest='verbose', action='store_true',
 		default=None, help='toggle verbose mode')
 arguments.add_argument('--config', dest='config', default=config_base,
 	help='specify an alternative config folder')
-
 
 def get_config(section):
 	"""Return a dictionary with options necessary for running the bot"""

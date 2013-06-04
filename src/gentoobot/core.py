@@ -32,7 +32,7 @@ from logger import log
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
 
-	def __init__(self, server, port, channel, nick, reconnect, verbose):
+	def __init__(self, server, port, channel, nick, password, reconnect, verbose):
 		server_spec = irc.bot.ServerSpec(server, int(port))
 		super(GentooBotFrame, self).__init__([server_spec], nick, nick, reconnection_interval=int(reconnect))
 
@@ -40,15 +40,26 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.reconnect = reconnect
 		self.channel = channel
 		self.nick = nick
+		# This is the bots original nick, used for ghosting.
+		self.my_nick = nick
 		self.server = server
 		self.port = int(port)
+		self.password = password
 
 		self.wholist = {}
 
 	def on_welcome(self, c, e):
 		self.event_logger(e)
+
+		if self.password:
+			self._identify()
+
 		print('Joining %s' % self.channel)
 		c.join(self.channel)
+
+	def _identify(self):
+		"""Identify the bot"""
+		self.connection.privmsg('nickserv', 'identify %s' % self.password)
 
 	def on_pubmsg(self, c, e):
 		self.event_logger(e)
@@ -117,6 +128,16 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.wholist[who['nick'].lower()] = who
 		self.whostatus = 'ACK'
 
+	def on_nicknameinuse(self, c, e):
+		self.nick += '_'
+		c.nick(self.nick)
+
+		if self.password:
+			self.connection.privmsg('nickserv', 'ghost %s %s' % (self.my_nick, self.password))
+			self.connection.nick(self.my_nick)
+			self.nick = self.my_nick[:]
+			self._identify()
+
 	def event_logger(self, event):
 		pass
 
@@ -153,8 +174,10 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 class GentooBot(GentooBotFrame):
 	"""The actual bot"""
-	def __init__(self, server, port, channel, nick, reconnect=5, verbose=False):
-		super(GentooBot, self).__init__(server, port, channel, nick, reconnect, verbose)
+	def __init__(self, server, port, channel, nick, password=None,
+			reconnect=5, verbose=False):
+		super(GentooBot, self).__init__(server, port, channel, nick, password,
+				reconnect, verbose)
 
 		self.admins = load_db(server, "admins")
 		self.banned_words = load_db(server, 'banned_words')
@@ -250,8 +273,10 @@ def main():
 	opt = get_config('CONNECTION')
 	misc = get_config('MISC')
 	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'],
-			reconnect=misc['reconnect'], verbose=misc['verbose'])
+			password=opt['password'], reconnect=misc['reconnect'],
+			verbose=misc['verbose'])
 	print('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
+
 	try:
 		bot.start()
 	except (UnicodeDecodeError, UnicodeEncodeError) as e:
