@@ -110,7 +110,7 @@ class Commands():
 			if command == cmd:
 				try:
 					reply = self._execute(command, user, arguments, bot)
-					if isinstance(reply, str):
+					if not reply == None:
 						bot.tell(user, reply)
 					return
 				except GottaGoFast as e:
