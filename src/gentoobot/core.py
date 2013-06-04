@@ -71,6 +71,15 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 	def on_privmsg(self, c, e):
 		self.event_logger(e)
+		user = e.source
+		msg = e.arguments[0]
+		self.private_actions(user, msg)
+
+	def actions(self, channel, user, message):
+		pass
+
+	def private_actions(self, user, msg):
+		pass
 
 	def on_action(self, c, e):
 		"""docstring for on_action"""
@@ -222,6 +231,9 @@ class GentooBot(GentooBotFrame):
 			self.reply(channel, user, message)
 		except Exception as e:
 			print(str(e))
+
+	def private_actions(self, user, message):
+		start_new_thread(commands.run, (self, user.nick, user, message))
 
 	def url_title(self, channel, msg):
 		"""if found, resolve the title of a url in the message."""

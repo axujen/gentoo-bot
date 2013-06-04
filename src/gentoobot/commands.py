@@ -113,7 +113,7 @@ class Commands():
 						bot.tell(channel, user, reply)
 					return
 				except GottaGoFast as e:
-					bot.say("%s, %s" % (user.nick, str(e)))
+					bot.say(channel, "%s, %s" % (user.nick, str(e)))
 					return
 
 	def _is_registered(self, user, bot):
@@ -317,10 +317,18 @@ class UserCommands(Commands):
 		return reply
 
 	def do_say(self, user, arguments, bot, nargs=1, admin=True):
-		"""say ``something``
+		"""say ``channel``, ``something``
 
 		Do i need to explain this?"""
-		bot.say(' '.join(arguments))
+		channel = arguments[0]
+		if not channel.startswith("#"):
+			return "First argument must be channel, see %shelp say." % self.prefix
+
+		if not channel in bot.chans:
+			return "Im not in that channel."
+
+		msg = ' '.join(arguments[1:])
+		bot.say(channel, msg)
 
 	def do_gentoo_trigger(self, user, arguments, bot, nargs=1, admin=True):
 		"""gentoo_trigger ``add|del|list`` ``keywords``
