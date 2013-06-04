@@ -34,7 +34,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 	def __init__(self, server, port, channel, nick, reconnect, verbose):
 		server_spec = irc.bot.ServerSpec(server, int(port))
-		super(GentooBotFrame, self).__init__([server_spec], nick, nick, reconnection_interval=reconnect)
+		super(GentooBotFrame, self).__init__([server_spec], nick, nick, reconnection_interval=int(reconnect))
 
 		self.verbose = verbose
 		self.reconnect = reconnect
