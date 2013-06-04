@@ -251,4 +251,7 @@ def main():
 	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'],
 			reconnect=misc['reconnect'], verbose=misc['verbose'])
 	print('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
-	bot.start()
+	try:
+		bot.start()
+	except (UnicodeDecodeError, UnicodeEndodeError):
+		pass
