@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from shlex import split
+from shlex import shlex
 from urllib import urlencode, urlopen
 from json import loads
 from inspect import getargspec
@@ -27,6 +27,13 @@ from config import get_config, save_db, load_db
 # Raised when you want to force a method to stop executing a command and print
 # the output of this exception
 class GottaGoFast(Exception): pass
+
+def split(value):
+    lex = shlex(value)
+    lex.quotes = '"'
+    lex.whitespace_split = True
+    lex.commenters = ''
+    return list(lex)
 
 class Commands():
 	def __init__(self, prefix=':'):
