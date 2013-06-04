@@ -31,11 +31,12 @@ from gentoobot.config import get_config, load_db
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
 
-	def __init__(self, server, port, channel, nick, reconnect=5):
+	def __init__(self, server, port, channel, nick, reconnect, verbose):
 		server_spec = irc.bot.ServerSpec(server, int(port))
 		super(GentooBotFrame, self).__init__([server_spec], nick, nick, reconnection_interval=reconnect)
 
-		self.reconnect = 5
+		self.verbose = verbose
+		self.reconnect = reconnect
 		self.channel = channel
 		self.nick = nick
 		self.server = server
@@ -44,18 +45,62 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.wholist = {}
 
 	def on_welcome(self, c, e):
+		self.event_logger(e)
 		print('Joining %s' % self.channel)
 		c.join(self.channel)
 
 	def on_pubmsg(self, c, e):
+		self.event_logger(e)
 		channel = e.target
 		user = e.source
 		message = e.arguments[0]
-		try:
-			print('[%s] %s | %s' % (channel, user.nick, message))
-		except UnicodeEncodeError as e:
-			print(str(e))
-		self.actions(channel, user, message)
+
+	def on_privmsg(self, c, e):
+		"""docstring for on_privmsg"""
+		self.event_logger(e)
+
+	def on_action(self, c, e):
+		"""docstring for on_action"""
+		self.event_logger(e)
+
+	def on_join(self, c, e):
+		"""docstring for on_join"""
+		self.event_logger(e)
+
+	def on_part(self, c, e):
+		"""docstring for on_part"""
+		self.event_logger(e)
+
+	def on_privnotice(self, c, e):
+		"""docstring for on_privnotice"""
+		self.event_logger(e)
+
+	def on_pubnotice(self, c, e):
+		"""docstring for on_pubnotice"""
+		self.event_logger(e)
+
+	def on_quit(self, c, e):
+		"""docstring for on_quit"""
+		self.event_logger(e)
+
+	def on_nick(self, c, e):
+		"""docstring for on_nick"""
+		self.event_logger(e)
+
+	def on_topic(self, c, e):
+		"""docstring for on_topci"""
+		self.event_logger(e)
+
+	def on_mode(self, c, e):
+		"""docstring for on_mode"""
+		self.event_logger(e)
+
+	def on_kick(self, c, e):
+		"""autorejoin when kicked."""
+		self.event_logger(e)
+		time.sleep(self.reconnect)
+		print('Rejoining %s' % self.channel)
+		c.join(self.channel)
 
 	def on_whoreply(self, c, e):
 		args = e.arguments
@@ -70,13 +115,10 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.wholist[who['nick'].lower()] = who
 		self.whostatus = 'ACK'
 
-	def on_kick(self, c, e):
-		"""autorejoin when kicked."""
-		time.sleep(self.reconnect)
-		print('Rejoining %s' % self.channel)
-		c.join(self.channel)
+	def event_logger(self, event):
+		pass
 
-	def who(self, nick, timeout = 5):
+	def who(self, nick, timeout=5):
 		"""Perform a WHO command on `nick`"""
 		if isinstance(nick, NickMask):
 			nick = nick.nick
@@ -109,8 +151,8 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 class GentooBot(GentooBotFrame):
 	"""The actual bot"""
-	def __init__(self, server, port, channel, nick, reconnect=5):
-		super(GentooBot, self).__init__(server, port, channel, nick, reconnect)
+	def __init__(self, server, port, channel, nick, reconnect=5, verbose=False):
+		super(GentooBot, self).__init__(server, port, channel, nick, reconnect, verbose)
 
 		self.admins = load_db(server, "admins")
 		self.banned_words = load_db(server, 'banned_words')
@@ -126,6 +168,32 @@ class GentooBot(GentooBotFrame):
 		'Gentoo, install it motherfucker.')
 
 		self.url_pattern = re.compile(r"(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
+
+	def event_logger(self, event):
+		"""Log an event"""
+
+		msg = ''
+		if len(event.arguments) > 0: msg = event.arguments[0]
+		type = event.type.upper()
+		target = event.target
+		source = event.source
+
+		entry = "(%s) to %s from %s | %s" % (type, target, source, msg)
+
+		if type in ('JOIN', 'PART'):
+			entry = "(%s) %s %sed %s" % (type, source, type.lower(), target)
+		elif type == 'QUIT':
+			entry = "(%s) %s disconnected saying %s" % (type, source, msg)
+		elif type == 'NICK':
+			oldnick = source.nick
+			entry = "(%s) %s is now known as %s" % (type, oldnick, target)
+		elif type == 'MODE':
+			t = event.arguments[1]
+			entry = "(%s) %s changed %s mode in %s %s" % (type, source, t, target, msg)
+		elif type == "TOPIC":
+			entry = "(%s) %s changed %s topic to %s" % (type, source, target, msg)
+
+		if self.verbose: print(entry)
 
 	def actions(self, channel, user, message):
 		start_new_thread(commands.run, (self, user, message))
@@ -192,9 +260,10 @@ class GentooBot(GentooBotFrame):
 		if message.startswith(('implying', '>implying')):
 			return 'Implying implications.'
 
-
 def main():
 	opt = get_config('CONNECTION')
-	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'])
+	misc = get_config('MISC')
+	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'],
+			reconnect=misc['reconnect'], verbose=misc['verbose'])
 	print('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 	bot.start()
