@@ -25,8 +25,9 @@ from thread import start_new_thread
 import irc.bot
 from irc.client import NickMask
 
-from gentoobot.commands import commands
 from gentoobot.config import get_config, load_db
+from gentoobot.commands import commands
+from logger import log
 
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
@@ -171,29 +172,7 @@ class GentooBot(GentooBotFrame):
 
 	def event_logger(self, event):
 		"""Log an event"""
-
-		msg = ''
-		if len(event.arguments) > 0: msg = event.arguments[0]
-		type = event.type.upper()
-		target = event.target
-		source = event.source
-
-		entry = "(%s) to %s from %s | %s" % (type, target, source, msg)
-
-		if type in ('JOIN', 'PART'):
-			entry = "(%s) %s %sed %s" % (type, source, type.lower(), target)
-		elif type == 'QUIT':
-			entry = "(%s) %s disconnected saying %s" % (type, source, msg)
-		elif type == 'NICK':
-			oldnick = source.nick
-			entry = "(%s) %s is now known as %s" % (type, oldnick, target)
-		elif type == 'MODE':
-			t = event.arguments[1]
-			entry = "(%s) %s changed %s mode in %s %s" % (type, source, t, target, msg)
-		elif type == "TOPIC":
-			entry = "(%s) %s changed %s topic to %s" % (type, source, target, msg)
-
-		if self.verbose: print(entry)
+		log(self.server, event, self.verbose)
 
 	def actions(self, channel, user, message):
 		start_new_thread(commands.run, (self, user, message))

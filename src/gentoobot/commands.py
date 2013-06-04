@@ -22,7 +22,6 @@ from inspect import getargspec
 from pylast import LastFMNetwork, WSError
 from bs4 import BeautifulSoup
 
-from gentoobot.config import get_config
 from config import get_config, save_db, load_db
 
 # Raised when you want to force a method to stop executing a command and print

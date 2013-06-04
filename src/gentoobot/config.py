@@ -22,8 +22,7 @@ import json
 
 # Config defaults.
 config = ConfigParser()
-global config_base
-config_base = "$HOME/.gentoobot"
+config_base = '$HOME/.gentoobot/'
 config_base = os.path.normpath(os.path.expandvars(os.path.expanduser(config_base)))
 
 config.add_section('LASTFM')
@@ -53,9 +52,11 @@ arguments.add_argument('-v', '--verbose', dest='verbose', action='store_true',
 arguments.add_argument('--config', dest='config', default=config_base,
 	help='specify an alternative config folder')
 
+
 def get_config(section):
 	"""Return a dictionary with options necessary for running the bot"""
 
+	global config_base
 	args = vars(arguments.parse_args())
 	config_base = os.path.normpath(os.path.expanduser(os.path.expandvars(args['config'])))
 
