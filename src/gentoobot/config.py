@@ -22,6 +22,9 @@ import json
 
 # Config defaults.
 config = ConfigParser()
+global config_base
+config_base = "$HOME/.gentoobot"
+config_base = os.path.normpath(os.path.expandvars(os.path.expanduser(config_base)))
 
 config.add_section('LASTFM')
 config.set('LASTFM', 'api_pub',		'1af49b4138e72da18bae9e77f1af46aa')
@@ -39,7 +42,7 @@ arguments.add_argument('-s', '--server', dest='server', help='irc server to conn
 arguments.add_argument('-p', '--port', type=int, dest='port', help='server port')
 arguments.add_argument('-c', '--channel', dest='channel', help='channel to join')
 arguments.add_argument('-n', '--nick', dest='nick', help="bot's nick")
-arguments.add_argument('--config', dest='config', default='$HOME/.gentoobot',
+arguments.add_argument('--config', dest='config', default=config_base,
 	help='specify an alternative config folder')
 
 
@@ -74,10 +77,7 @@ def get_config(section):
 
 def save_db(server, db, object):
 	"""Save a database (json) inside a folder."""
-	config = vars(arguments.parse_args())['config']
-	config = os.path.normpath(os.path.expanduser(os.path.expandvars(config)))
-
-	folder = os.path.join(config, server)
+	folder = os.path.join(config_base, server)
 
 	if not os.path.exists(folder):
 		print('Creating new server db folder "%s"' % folder)
@@ -96,10 +96,7 @@ def save_db(server, db, object):
 
 def load_db(server, db):
 	"""Load a json database."""
-	config = vars(arguments.parse_args())['config']
-	config = os.path.normpath(os.path.expanduser(os.path.expandvars(config)))
-
-	db_file = os.path.join(config, server, db)
+	db_file = os.path.join(config_base, server, db)
 	print('Loading '+db_file)
 
 	if not os.path.exists(db_file) or not os.path.isfile(db_file):
