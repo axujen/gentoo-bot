@@ -73,7 +73,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
 		time.sleep(self.reconnect)
-		print('Rejoining %' % self.channel)
+		print('Rejoining %s' % self.channel)
 		c.join(self.channel)
 
 	def who(self, nick, timeout = 5):
