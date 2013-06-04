@@ -29,6 +29,7 @@ def log(server, event, verbose):
 	entry = parse_event(event)
 	write_log(server, event, entry)
 	if verbose: print(entry)
+	return
 
 def parse_event(event):
 	"""Parse an event and return a suitable entry for writting"""

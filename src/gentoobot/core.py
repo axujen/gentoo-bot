@@ -55,6 +55,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		channel = e.target
 		user = e.source
 		message = e.arguments[0]
+		self.actions(channel, user, message)
 
 	def on_privmsg(self, c, e):
 		"""docstring for on_privmsg"""
@@ -253,5 +254,5 @@ def main():
 	print('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 	try:
 		bot.start()
-	except (UnicodeDecodeError, UnicodeEndodeError) as e:
+	except (UnicodeDecodeError, UnicodeEncodeError) as e:
 		print(str(e))
