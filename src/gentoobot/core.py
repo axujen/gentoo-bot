@@ -182,8 +182,8 @@ class GentooBot(GentooBotFrame):
 		try:
 			self.url_title(message)
 			self.reply(user, message)
-		except:
-			pass
+		except Exception as e:
+			print(str(e))
 
 	def url_title(self, msg):
 		"""if found, resolve the title of a url in the message."""
@@ -253,5 +253,5 @@ def main():
 	print('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 	try:
 		bot.start()
-	except (UnicodeDecodeError, UnicodeEndodeError):
-		pass
+	except (UnicodeDecodeError, UnicodeEndodeError) as e:
+		print(str(e))
