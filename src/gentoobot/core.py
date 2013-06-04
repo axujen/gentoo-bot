@@ -125,7 +125,7 @@ class GentooBot(GentooBotFrame):
 		'Have you ever heard of this os? its called gentoo and i think you should install it.',
 		'Gentoo, install it motherfucker.')
 
-		self.url_pattern = re.compile(r"((?:https?\:\/\/|www\.)(?:[-a-z0-9]+\.)*[-a-z0-9]+.*)")
+		self.url_pattern = re.compile(r"(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
 
 	def actions(self, channel, user, message):
 		start_new_thread(commands.run, (self, user, message))
@@ -136,8 +136,10 @@ class GentooBot(GentooBotFrame):
 		"""if found, resolve the title of a url in the message."""
 		url_pattern = self.url_pattern
 		if re.search(url_pattern, msg):
-			url = re.findall(url_pattern, msg)[0]
-			print('Detected url %s' % url)
+			url = re.findall(url_pattern, msg)[0][0]
+			if url.startswith('www.'):
+				url = 'http://'+url
+			print('Detected url %s' % str(url))
 			p_url = urlparse(url)
 			if p_url.netloc == 'boards.4chan.org' and re.match(r'^/\w+/res/(\d+|\d+#p\d+)$', p_url.path):
 				print('Is 4chan thread')
