@@ -254,7 +254,8 @@ class GentooBot(GentooBotFrame):
 			url = re.findall(url_pattern, msg)[0][0]
 			r = requests.get(url)
 
-			if not 'text/html' in r.headers['content-type']:
+			ctype = r.headers['content-type']
+			if not 'text/html' in ctype:
 				return
 
 			if url.startswith('www.'):
@@ -282,14 +283,6 @@ class GentooBot(GentooBotFrame):
 				return self.say(channel, message)
 
 			data = urlopen(url).read()
-
-			guess = chardet.detect(data)['encoding']
-
-			if guess:
-				data.decode(guess, errors='replace')
-			else:
-				data.decode('utf-8', errors='replace')
-
 			soup = BeautifulSoup(data)
 			if soup.title:
 				title = soup.title.string
