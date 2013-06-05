@@ -38,7 +38,6 @@ config.set('CONNECTION', 'channel',	'#/g/test')
 config.set('CONNECTION', 'password', 'None')
 
 config.add_section('MISC')
-config.set('MISC',	'verbose',	'False')
 config.set('MISC',	'reconnect', '5')
 
 # Arguments
@@ -50,8 +49,6 @@ arguments.add_argument('-n', '--nick', dest='nick', help="bot's nick")
 arguments.add_argument('--pass', dest='password', help='Bots login password')
 arguments.add_argument('-r', '--reconnect', dest='reconnect', type=int,
 		help='reconnection interval when kicked from a channel or when disconnected')
-arguments.add_argument('-v', '--verbose', dest='verbose', action='store_true',
-		default=None, help='toggle verbose mode')
 arguments.add_argument('--config', dest='config', default=config_base,
 	help='specify an alternative config folder')
 

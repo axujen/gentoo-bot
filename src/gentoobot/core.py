@@ -35,11 +35,10 @@ from gentoobot import logger
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
 
-	def __init__(self, server, port, channel, nick, password, reconnect, verbose):
+	def __init__(self, server, port, channel, nick, password, reconnect):
 		server_spec = irc.bot.ServerSpec(server, int(port))
 		super(GentooBotFrame, self).__init__([server_spec], nick, nick, reconnection_interval=reconnect)
 
-		self.verbose = verbose
 		self.reconnect = reconnect
 		self.chans = [channel]
 		self.nick = nick
@@ -216,9 +215,9 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 class GentooBot(GentooBotFrame):
 	"""The actual bot"""
 	def __init__(self, server, port, channel, nick, password=None,
-			reconnect=5, verbose=False):
+			reconnect=5):
 		super(GentooBot, self).__init__(server, port, channel, nick, password,
-				reconnect, verbose)
+				reconnect)
 
 		self.admins = load_db(server, "admins")
 		self.banned_words = load_db(server, 'banned_words')
@@ -318,8 +317,7 @@ def main():
 	opt = get_config('CONNECTION')
 	misc = get_config('MISC')
 	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'],
-			password=opt['password'], reconnect=int(misc['reconnect']),
-			verbose=misc['verbose'])
+			password=opt['password'], reconnect=int(misc['reconnect']))
 	logger.logger.warning('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 
 	try:
