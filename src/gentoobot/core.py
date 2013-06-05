@@ -17,6 +17,7 @@
 import re, sys, random, json, time
 from urllib2 import urlopen, HTTPError
 from urlparse import urlparse
+import requests
 import traceback
 import chardet
 
@@ -251,6 +252,11 @@ class GentooBot(GentooBotFrame):
 		url_pattern = self.url_pattern
 		if re.search(url_pattern, msg):
 			url = re.findall(url_pattern, msg)[0][0]
+			r = requests.get(url)
+
+			if not 'text/html' in r.headers['content-type']:
+				return
+
 			if url.startswith('www.'):
 				url = 'http://'+url
 			logger.logger.warning('Detected url %s' % str(url))
