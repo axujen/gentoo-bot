@@ -20,6 +20,7 @@ from ConfigParser import ConfigParser
 from argparse import ArgumentParser
 import json
 
+
 # Config defaults.
 config = ConfigParser()
 config_base = '$HOME/.gentoobot/'
@@ -54,6 +55,8 @@ arguments.add_argument('-v', '--verbose', dest='verbose', action='store_true',
 arguments.add_argument('--config', dest='config', default=config_base,
 	help='specify an alternative config folder')
 
+from gentoobot.logger import logger
+
 def get_config(section):
 	"""Return a dictionary with options necessary for running the bot"""
 
@@ -70,7 +73,7 @@ def get_config(section):
 	configfile = os.path.join(config_base, 'config.cfg')
 
 	if not os.path.exists(configfile):
-		print('Creating new configuration file "%s"' % configfile)
+		logger.warning('Creating new configuration file "%s"' % configfile)
 		with open(configfile, 'wb') as f:
 			config.write(f)
 	else:
@@ -93,7 +96,7 @@ def save_db(server, db, object):
 	folder = os.path.join(config_base, server)
 
 	if not os.path.exists(folder):
-		print('Creating new server db folder "%s"' % folder)
+		logger.warning('Creating new server db folder "%s"' % folder)
 		makedirs(folder)
 
 	if not os.path.isdir(folder):
@@ -110,7 +113,7 @@ def save_db(server, db, object):
 def load_db(server, db):
 	"""Load a json database."""
 	db_file = os.path.join(config_base, server, db)
-	print('Loading '+db_file)
+	logger.info('Loading '+db_file)
 
 	if not os.path.exists(db_file) or not os.path.isfile(db_file):
 		return None

@@ -211,7 +211,6 @@ class UserCommands(Commands):
 		try:
 			result = response['feed']['entry'][0]#['media$group']['media$player'][0]['url'].split('&', 1)[0]
 		except (KeyError, IndexError):
-			print('No results found!')
 			return 'No results found for "%s"' % search
 		link = result['media$group']['media$player'][0]['url'].split('&', 1)[0]
 		title = result['title']['$t']
