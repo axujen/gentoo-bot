@@ -279,7 +279,6 @@ class UserCommands(Commands):
 											'are playing', 'is playing'))
 
 		username = self._nick_to_lastfm(user.nick, bot)
-		print('USERNAME IS '+str(username))
 		return "You %s" % (self._now_playing(username))
 
 	def do_compare(self, user, arguments, bot, nargs=1):
