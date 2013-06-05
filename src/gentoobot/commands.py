@@ -395,7 +395,7 @@ class UserCommands(Commands):
 
 		return "Joined %s" % ', '.join(channels)
 
-	def leave(self, user, arguments, bot, nargs=1, admin=True):
+	def do_leave(self, user, arguments, bot, nargs=1, admin=True):
 		"""part ``channels``
 
 		Part the specified channels."""

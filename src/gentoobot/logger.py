@@ -15,96 +15,82 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from os import mkdir
-from time import localtime, strftime
+from glob import glob
 from collections import defaultdict
+import logging
+import logging.handlers
+
 from config import config_base
 
-global chan_buf, raw_buf, buf_len
-chan_buf = defaultdict(dict)
-raw_buf = defaultdict(list)
-buf_len = 10
+# Console log
+logger = logging.getLogger('console')
+logger.setLevel(logging.DEBUG)
 
-def log(server, event, verbose):
-	entry = parse_event(event)
-	write_log(server, event, entry)
-	if verbose: print(entry.encode(errors='replace'))
-	return
+console = logging.StreamHandler()
+console.setLevel(logging.WARNING)
 
-def parse_event(event):
-	"""Parse an event and return a suitable entry for writting"""
+cformat = logging.Formatter("[%(asctime)s] %(message)s", datefmt="%H:%M")
+console.setFormatter(cformat)
+logger.addHandler(console)
 
-	timestamp = strftime('%H:%M', localtime())
-	msg = ''
-	if len(event.arguments) > 0: msg = event.arguments[0]
-	type = event.type.upper()
-	target = event.target
+# Channel logs
+ch_format = logging.Formatter('[%(asctime)s] %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+
+def log_event(server, event):
+	type = event.type
 	source = event.source
-	if hasattr(source, 'nick'):
-		source = source.nick
+	target = event.target
+	arguments = event.arguments
+	msg = '(%s from %s to %s) %s' % (type, source, target,
+			'; '.join([str(arg) for arg in arguments]))
+	logger.info(msg)
+	chat_log(server, type, source, target, arguments)
 
-	entry = "(%s) to %s from %s | %s" % (type, target, source, msg)
-
-	if type in ('JOIN', 'PART'):
-		entry = "(%s) %s %sed %s" % (type, source, type.lower(), target)
-	elif type == 'QUIT':
-		entry = "(%s) %s disconnected saying %s" % (type, source, msg)
-	elif type == 'NICK':
-		oldnick = source.nick
-		entry = "(%s) %s is now known as %s" % (type, oldnick, target)
-	elif type == 'MODE':
-		t = event.arguments[1]
-		entry = "(%s) %s changed %s mode in %s %s" % (type, source, t, target, msg)
-	elif type == "TOPIC":
-		entry = "(%s) %s changed %s topic to %s" % (type, source, target, msg)
-
-	return '[%s] %s' % (timestamp, entry)
-
-def write_log(server, event, entry):
-	"""Categorieze logs and write to file after buffering enough lines."""
-	if str(event.target).startswith('#'):
-		channel_log(server, entry, str(event.target))
-	raw_log(server, entry)
-
-def channel_log(server, entry, channel):
-	if not channel in chan_buf[server]:
-		chan_buf[server] = defaultdict(list)
-
-	chan_buf[server][channel].append(entry)
-	if len(chan_buf[server][channel]) > buf_len:
-		_write_chan(server, channel)
-
-def raw_log(server, entry):
-	"""Write raw uncategorized log"""
-	raw_buf[server].append(entry)
-	if len(raw_buf[server]) >= buf_len:
-		_write_raw(server)
-
-def _write_chan(server, channel):
+def chat_log(server, type, source, target, arguments):
 	logdir = os.path.join(config_base, server, 'logs')
 
-	if not os.path.exists(logdir):
-		mkdir(logdir)
+	if target == None:
+		# 2deep4me
+		channels = [os.path.split(ch)[1][:-4] for ch in glob("%s%s%s" % (logdir, os.path.sep, "*.log")) if os.path.isfile(ch)]
+	elif target.startswith('#'):
+		channels = [target.replace(os.path.sep, '_')[1:]]
+	else: return
 
-	if not os.path.isdir(logdir):
-		raise ValueError("%s is not a directory." % logdir)
+	for channel in channels:
+		logfile = os.path.join(logdir, channel+'.log')
+		log = logging.getLogger(channel)
 
-	with open(os.path.join(logdir, channel.replace(os.path.sep, '_')), 'a') as log:
-		for line in chan_buf[server][channel]:
-			log.write(line+'\n')
+		if not log.handlers:
+			handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=4096)
+			handler.setLevel(logging.CRITICAL)
+			handler.setFormatter(ch_format)
+			log.addHandler(handler)
 
-	del(chan_buf[server][channel])
+		entry = format_log(type, source, target, arguments)
+		if entry:
+			log.critical(entry)
 
-def _write_raw(server):
-	logdir = os.path.join(config_base, server, 'logs')
-
-	if not os.path.exists(logdir):
-		mkdir(logdir)
-
-	if not os.path.isdir(logdir):
-		raise ValueError("%s is not a directory." % logdir)
-
-	with open(os.path.join(logdir, 'raw'), 'a') as log:
-		for line in raw_buf[server]:
-			log.write(line+'\n')
-	del(raw_buf[server])
+def format_log(type, source, target, arguments):
+	"""Format a channel msg and return a good looking entry"""
+	entry = None
+	if type in ('pubmsg', 'privmsg'):
+		entry = "%s\t%s" % (source.nick, arguments[0])
+	elif type == 'join':
+		entry = "--> %s (%s) has joined the channel" % (source.nick, source)
+	elif type == 'part':
+		entry = "<-- %s (%s) has left the channel" % (source.nick, source)
+	elif type == 'nick':
+		entry = '-- %s (%s) is now known as %s' % (source.nick, source, target)
+	elif type == 'quit':
+		entry = '<-- %s (%s) has quit (%s) ' % (source.nick, source, arguments[0])
+	elif type == 'action':
+		entry = '\t*\t%s %s' % (source.split('!')[0], arguments[0])
+	elif type == 'nick':
+		entry = '-- %s (%s) is now known as %s' % (source.nick, source, target)
+	elif type in ('pubnotice', 'privnotice'):
+		entry = '-- Notice(%s) -> %s: %s' % (source.nick, target, arguments[0])
+	elif type == 'mode':
+		entry = '-- Mode %s [ %s %s ] by %s' % (target, arguments[0], arguments[1], source.nick)
+	elif type == 'kick':
+		entry = '<-- %s has kicked %s from the channel (%s)' % (source.nick, arguments[0], arguments[1])
+	return entry

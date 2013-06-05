@@ -25,11 +25,11 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from thread import start_new_thread
 
 import irc.bot
-from irc.client import NickMask
+from irc.client import NickMask, Event
 
 from gentoobot.config import get_config, load_db
 from gentoobot.commands import commands
-from logger import log
+from gentoobot import logger
 
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
@@ -52,7 +52,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.wholist = {}
 
 	def on_welcome(self, c, e):
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 		if self.password:
 			self._identify()
@@ -65,14 +65,14 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.connection.privmsg('nickserv', 'identify %s' % self.password)
 
 	def on_pubmsg(self, c, e):
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 		channel = e.target
 		user = e.source
 		message = e.arguments[0]
 		self.actions(channel, user, message)
 
 	def on_privmsg(self, c, e):
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 		user = e.source
 		msg = e.arguments[0]
 		self.private_actions(user, msg)
@@ -85,48 +85,47 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 	def on_action(self, c, e):
 		"""docstring for on_action"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_join(self, c, e):
 		"""docstring for on_join"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_part(self, c, e):
 		"""docstring for on_part"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_privnotice(self, c, e):
 		"""docstring for on_privnotice"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_pubnotice(self, c, e):
-		"""docstring for on_pubnotice"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_quit(self, c, e):
 		"""docstring for on_quit"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_nick(self, c, e):
 		"""docstring for on_nick"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_topic(self, c, e):
 		"""docstring for on_topci"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_mode(self, c, e):
 		"""docstring for on_mode"""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
-		self.event_logger(e)
+		logger.log_event(self.server, e)
 		time.sleep(self.reconnect)
 		self.join(e.target)
 
 	def join(self, channel):
-		print('Joining %s' % channel)
+		logger.logger.warning('Joining %s', channel)
 		self.connection.join(channel)
 
 		if not channel in self.chans:
@@ -134,7 +133,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 	def part(self, channel):
 		"""Leave a channel"""
-		print('Leaving %s' % channel)
+		logger.logger.warning('Leaving %s', channel)
 		self.connection.part(channel)
 
 		if channel in self.chans:
@@ -173,27 +172,37 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 		self.whostatus = 'REQUEST'
 		self.connection.who(nick)
-		n = 0
 
+		n = 0
 		while not self.whostatus == 'ACK':
 			if n >= timeout:
 				return "REQUEST TIMEOUT"
 			n += 1
-			time.sleep(2)
+			time.sleep(1)
 
 		return self.wholist[nick.lower()]
 
 	def say(self, channel, message):
-		"""Print message in the channel"""
+		"""Send a message to the channel"""
 
 		if isinstance(message, str):
 			guess = chardet.detect(message)['encoding']
 			message = message.decode(guess, errors='replace')
 
 		message = re.sub(r'\n', ' | ', message)
-		print('->[%s] %s' % (channel, message.encode(errors='replace')))
+
+		# 2 thirds of it is real
+		source = NickMask('%s!%s@%s' % (self.nick, self.nick, self.nick))
+		target = channel
+		arguments = [message]
+		if target.startswith('#'):
+			type = 'pubmsg'
+		else:
+			type = 'privmsg'
+		e = Event(type, source, target, arguments)
 
 		self.connection.privmsg(channel, message)
+		logger.log_event(self.server, e)
 
 	def tell(self, channel, user, message):
 		"""Tell a user a message"""
@@ -225,20 +234,14 @@ class GentooBot(GentooBotFrame):
 
 		self.url_pattern = re.compile(r"(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
 
-	def event_logger(self, event):
-		"""Log an event"""
-		try:
-			log(self.server, event, self.verbose)
-		except:
-			pass
 
 	def actions(self, channel, user, message):
-		start_new_thread(commands.run, (self, channel, user, message))
 		try:
+			start_new_thread(commands.run, (self, channel, user, message))
 			self.url_title(channel, message)
 			self.reply(channel, user, message)
 		except Exception as e:
-			print(traceback.format_exc())
+			logger.console.exception("%s: %s", repr(e), str(e))
 
 	def private_actions(self, user, message):
 		start_new_thread(commands.run, (self, user.nick, user, message))
@@ -250,10 +253,10 @@ class GentooBot(GentooBotFrame):
 			url = re.findall(url_pattern, msg)[0][0]
 			if url.startswith('www.'):
 				url = 'http://'+url
-			print('Detected url %s' % str(url))
+			logger.logger.warning('Detected url %s' % str(url))
 			p_url = urlparse(url)
 			if p_url.netloc == 'boards.4chan.org' and re.match(r'^/\w+/res/(\d+|\d+#p\d+)$', p_url.path):
-				print('Is 4chan thread')
+				logger.logger.warning('%s is a 4chan thread' % (url))
 				path = p_url.path.split('/')
 				board = path[1]
 				thread = path[-1]
@@ -273,8 +276,14 @@ class GentooBot(GentooBotFrame):
 				return self.say(channel, message)
 
 			data = urlopen(url).read()
+
 			guess = chardet.detect(data)['encoding']
-			data.decode(guess, errors='replace')
+
+			if guess:
+				data.decode(guess, errors='replace')
+			else:
+				data.decode('utf-8', errors='replace')
+
 			soup = BeautifulSoup(data)
 			if soup.title:
 				title = soup.title.string
@@ -312,9 +321,9 @@ def main():
 	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'],
 			password=opt['password'], reconnect=int(misc['reconnect']),
 			verbose=misc['verbose'])
-	print('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
+	logger.logger.warning('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 
 	try:
 		bot.start()
 	except (UnicodeDecodeError, UnicodeEncodeError) as e:
-		print(traceback.format_exc())
+		logger.console.exception("%s: %s", repr(e), str(e))
