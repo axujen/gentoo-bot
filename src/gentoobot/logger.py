@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import os, sys
 import os.path
 from glob import glob
 from collections import defaultdict
@@ -84,7 +84,8 @@ def chat_log(server, type, source, target, arguments):
 		log = logging.getLogger(channel)
 
 		if not log.handlers:
-			handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=4096)
+			handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=4096,
+					backupCount=sys.maxint)
 			handler.setLevel(logging.CRITICAL)
 			handler.setFormatter(ch_format)
 			log.addHandler(handler)
