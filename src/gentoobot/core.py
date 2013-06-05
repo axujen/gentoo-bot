@@ -242,7 +242,7 @@ class GentooBot(GentooBotFrame):
 			self.url_title(channel, message)
 			self.reply(channel, user, message)
 		except Exception as e:
-			logger.console.exception("%s: %s", repr(e), str(e))
+			logger.error_log(e, self.server)
 
 	def private_actions(self, user, message):
 		start_new_thread(commands.run, (self, user.nick, user, message))
@@ -332,4 +332,4 @@ def main():
 	try:
 		bot.start()
 	except (UnicodeDecodeError, UnicodeEncodeError) as e:
-		logger.console.exception("%s: %s", repr(e), str(e))
+		logger.error_log(e)

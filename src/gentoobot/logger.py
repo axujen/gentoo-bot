@@ -46,6 +46,24 @@ def log_event(server, event):
 	logger.info(msg)
 	chat_log(server, type, source, target, arguments)
 
+def error_log(exception, server=None):
+	"""Per server error log"""
+	if server:
+		log = logging.getLogger(server)
+		logfile = os.path.join(config_base, server, 'errors.log')
+	else:
+		log = logging.getLogger('errors')
+		logfile = os.path.join(config_base, 'errors.log')
+
+	if not log.handlers:
+		filehandler = logging.FileHandler(logfile)
+		filehandler.setLevel(logging.ERROR)
+		filehandler.setFormatter(cformat)
+		log.addHandler(filehandler)
+
+	logger.exception(exception)
+	log.exception(exception)
+
 def chat_log(server, type, source, target, arguments):
 	logdir = os.path.join(config_base, server, 'logs')
 
