@@ -233,7 +233,16 @@ class GentooBot(GentooBotFrame):
 		'Gentoo, install it motherfucker.')
 
 		self.url_pattern = re.compile(r"(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
-		self.smiley_pattern = re.compile(r"([:x=;]{1,2}(?:\)|D|P|O|o))(?:\s|$)", re.I)
+		# self.smiley_pattern = re.compile(r"([:x=;]{1,2}(?:\)|D|P|O|o))(?:\s|$)", re.I)
+		self.smiley_patterns = [
+				re.compile(r"[0>Qo^.][_-]{1,32}[0<Qo^.][;']?"),
+				re.compile(r"[0>Qo^-][.,][-^Q0<o][;']?"),
+				re.compile(r">?[x=:;]-*[/3LVD()}xOSCP<>]{1,32}"),
+				re.compile(r"(\:|;)-?(\]|\[)"),
+				re.compile(r"(>_>|<_<|4:\})"),
+				re.compile(r"1,11\( ´ - `\)"),
+				re.compile(r";_{1,32};"),
+				re.compile(r"[DOSC\(\)]-?[\:;]|[>\=-][o5][-\=<]")]
 
 	def actions(self, channel, user, message):
 		try:
@@ -314,12 +323,13 @@ class GentooBot(GentooBotFrame):
 			return 'Implying implications.'
 
 	def reply_4_smiley(self, message):
-		smileys = re.findall(self.smiley_pattern, message)
-		if smileys:
-			logger.logger.warning('Found %s in %s', ', '.join(smileys), message)
-			choice = random.choice(smileys)
-			logger.logger.warning('replying with %s', choice)
-			return str(choice)
+		for pat in self.smiley_patterns:
+			smileys = re.findall(pat, message)
+			if smileys:
+				logger.logger.warning('Found %s in %s', ', '.join(smileys), message)
+				choice = random.choice(smileys)
+				logger.logger.warning('replying with %s', choice)
+				return str(choice)
 
 def main():
 	opt = get_config('CONNECTION')
