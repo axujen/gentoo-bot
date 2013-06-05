@@ -17,6 +17,8 @@
 import re, sys, random, json, time
 from urllib2 import urlopen, HTTPError
 from urlparse import urlparse
+import traceback
+import chardet
 
 from bs4 import BeautifulSoup
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -183,6 +185,11 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 	def say(self, channel, message):
 		"""Print message in the channel"""
+
+		if isinstance(message, str):
+			guess = chardet.detect(message)['encoding']
+			message = message.decode(guess, errors='replace')
+
 		message = re.sub(r'\n', ' | ', message)
 		print('->[%s] %s' % (channel, message))
 		self.connection.privmsg(channel, message)
@@ -230,7 +237,7 @@ class GentooBot(GentooBotFrame):
 			self.url_title(channel, message)
 			self.reply(channel, user, message)
 		except Exception as e:
-			print(str(e))
+			print(traceback.format_exc())
 
 	def private_actions(self, user, message):
 		start_new_thread(commands.run, (self, user.nick, user, message))
@@ -264,7 +271,10 @@ class GentooBot(GentooBotFrame):
 
 				return self.say(channel, message)
 
-			soup = BeautifulSoup(urlopen(url))
+			data = urlopen(url).read()
+			guess = chardet.detect(data)['encoding']
+			data.decode(guess, errors='replace')
+			soup = BeautifulSoup(data)
 			if soup.title:
 				title = soup.title.string
 				return self.say(channel, "[URI] %s" % title)
@@ -306,4 +316,4 @@ def main():
 	try:
 		bot.start()
 	except (UnicodeDecodeError, UnicodeEncodeError) as e:
-		print(str(e))
+		print(traceback.format_exc())
