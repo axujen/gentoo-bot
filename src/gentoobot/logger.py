@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import os.path
 from glob import glob
 from collections import defaultdict
@@ -50,6 +51,8 @@ def error_log(exception, server=None):
 	"""Per server error log"""
 	if server:
 		log = logging.getLogger(server)
+		if not os.path.exists(os.path.join(config_base, server)):
+				os.mkdir(os.path.join(config_base, server))
 		logfile = os.path.join(config_base, server, 'errors.log')
 	else:
 		log = logging.getLogger('errors')
@@ -66,6 +69,8 @@ def error_log(exception, server=None):
 
 def chat_log(server, type, source, target, arguments):
 	logdir = os.path.join(config_base, server, 'logs')
+	if not os.path.exists(logdir):
+		os.mkdir(logdir)
 
 	if target == None:
 		# 2deep4me
