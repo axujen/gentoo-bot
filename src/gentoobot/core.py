@@ -247,7 +247,6 @@ class GentooBot(GentooBotFrame):
 	def actions(self, channel, user, message):
 		try:
 			start_new_thread(commands.run, (self, channel, user, message))
-			self.url_title(channel, message)
 			self.reply(channel, user, message)
 		except Exception as e:
 			logger.error_log(e, self.server)
@@ -255,7 +254,16 @@ class GentooBot(GentooBotFrame):
 	def private_actions(self, user, message):
 		start_new_thread(commands.run, (self, user.nick, user, message))
 
-	def url_title(self, channel, msg):
+	def reply(self, channel, user, message):
+		"""Reply to something"""
+		for reply in self.replies:
+			status = getattr(self, reply)(channel, user, message)
+			if status == True: return
+
+	def _get_replies(self):
+		return sorted([reply for reply in dir(self) if reply.startswith('reply_')])
+
+	def reply_1_url_title(self, channel, user, msg):
 		"""if found, resolve the title of a url in the message."""
 		url_pattern = self.url_pattern
 		if re.search(url_pattern, msg):
@@ -288,48 +296,44 @@ class GentooBot(GentooBotFrame):
 				message = 'Board: /%s/ | R: %s, I: %s | Subject: %s | Comment: %s'\
 						% (board, replies, images, str(subject), str(comment))
 
-				return self.say(channel, message)
+				self.say(channel, message)
+				return True
 
 			data = urlopen(url).read()
 			soup = BeautifulSoup(data)
 			if soup.title:
 				title = soup.title.string
-				return self.say(channel, "[URI] %s" % title)
+				self.say(channel, "[URI] %s" % title)
+				return True
 
-	def reply(self, channel, user, message):
-		"""Reply to something"""
-		for reply in self.replies:
-			msg = getattr(self, reply)(message)
-			if isinstance(msg, str):
-				return self.tell(channel, user, msg)
-
-	def _get_replies(self):
-		return sorted([reply for reply in dir(self) if reply.startswith('reply_')])
-
-	def reply_1_installgentoo(self, message):
+	def reply_2_installgentoo(self, channel, user, msg):
 		if self.ig_keywords:
 			for keyword in self.ig_keywords:
-				if re.search(r"\b(%s)\b" % keyword, message, re.I):
+				if re.search(r"\b(%s)\b" % keyword, msg, re.I):
 					reply = random.choice(self.ig_replies)
-					return reply
+					self.tell(channel, user, reply)
+					return True
 
-	def reply_2_bsd(self, message):
-		if re.search(r'(^|[^\d.-])bsd\b', message, re.I):
-			return "BSD is dum."
+	def reply_3_bsd(self, channel, user, msg):
+		if re.search(r'(^|[^\d.-])bsd\b', msg, re.I):
+			self.tell(channel, user, 'bsd is dum.')
+			return True
 
-	def reply_3_implying(self, message):
+	def reply_4_implying(self, channel, user, msg):
 		"""implying implications"""
-		if message.startswith(('implying', '>implying')):
-			return 'Implying implications.'
+		if msg.startswith(('implying', '>implying')):
+			self.tell(channel, user, 'Implying implications')
+			return True
 
-	def reply_4_smiley(self, message):
+	def reply_5_smiley(self, channel, user, msg):
 		for pat in self.smiley_patterns:
-			smileys = re.findall(pat, message)
+			smileys = re.findall(pat, msg)
 			if smileys:
-				logger.logger.warning('Found %s in %s', ', '.join(smileys), message)
+				logger.logger.warning('Found %s in %s', ', '.join(smileys), msg)
 				choice = random.choice(smileys)
 				logger.logger.warning('replying with %s', choice)
-				return str(choice)
+				self.tell(channel, user, msg)
+				return True
 
 def main():
 	opt = get_config('CONNECTION')
@@ -339,6 +343,6 @@ def main():
 	logger.logger.warning('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 
 	try:
-		bot.start()
-	except (UnicodeDecodeError, UnicodeEncodeError) as e:
+		start_new_thread(bot.start())
+	except Exception as e:
 		logger.error_log(e)
