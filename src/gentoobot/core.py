@@ -191,10 +191,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 			message = message.decode(guess, errors='replace')
 
 		message = re.sub(r'\n', ' | ', message)
-		try:
-			print('->[%s] %s' % (channel, message))
-		except UnicodeError:
-			print(format_exc())
+		print('->[%s] %s' % (channel, message.encode(errors='replace')))
 
 		self.connection.privmsg(channel, message)
 

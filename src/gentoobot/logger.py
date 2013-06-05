@@ -28,7 +28,7 @@ buf_len = 10
 def log(server, event, verbose):
 	entry = parse_event(event)
 	write_log(server, event, entry)
-	if verbose: print(entry)
+	if verbose: print(entry.encode(errors='replace'))
 	return
 
 def parse_event(event):
