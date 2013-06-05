@@ -84,7 +84,7 @@ def chat_log(server, type, source, target, arguments):
 		log = logging.getLogger(channel)
 
 		if not log.handlers:
-			handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=4096,
+			handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=4000000,
 					backupCount=50)
 			handler.setLevel(logging.CRITICAL)
 			handler.setFormatter(ch_format)
