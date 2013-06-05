@@ -79,9 +79,6 @@ def get_config(section):
 
 	opt = dict(config.items(section.upper()))
 
-	if section.upper() == 'MISC':
-		opt['verbose'] = config.getboolean('MISC', 'verbose')
-
 	for arg in args:
 		if not args[arg] == None:
 			opt[arg] = args[arg]
