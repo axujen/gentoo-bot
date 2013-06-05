@@ -52,7 +52,7 @@ def error_log(exception, server=None):
 	if server:
 		log = logging.getLogger(server)
 		if not os.path.exists(os.path.join(config_base, server)):
-				os.mkdir(os.path.join(config_base, server))
+				os.makedirs(os.path.join(config_base, server))
 		logfile = os.path.join(config_base, server, 'errors.log')
 	else:
 		log = logging.getLogger('errors')
@@ -70,7 +70,7 @@ def error_log(exception, server=None):
 def chat_log(server, type, source, target, arguments):
 	logdir = os.path.join(config_base, server, 'logs')
 	if not os.path.exists(logdir):
-		os.mkdir(logdir)
+		os.makedirs(logdir)
 
 	if target == None:
 		# 2deep4me
