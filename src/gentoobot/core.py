@@ -332,7 +332,7 @@ class GentooBot(GentooBotFrame):
 				logger.logger.warning('Found %s in %s', ', '.join(smileys), msg)
 				choice = random.choice(smileys)
 				logger.logger.warning('replying with %s', choice)
-				self.tell(channel, user, msg)
+				self.tell(channel, user, choice)
 				return True
 
 def main():
