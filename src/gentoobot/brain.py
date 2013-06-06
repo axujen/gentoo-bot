@@ -96,4 +96,4 @@ def generate_sentence(msg):
 			return ' '.join(sentence)
 		key = ' '.join((word, next)).lower()
 		if key in brain.keys():
-			sentence[id] = random.choice(brain[key])
+			sentence[id] = random.choice(list(brain[key]))

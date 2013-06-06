@@ -263,10 +263,12 @@ class GentooBot(GentooBotFrame):
 
 		curtime = int(time())
 		for treply in self.treplies:
-			if curtime >= self.last_reply+10:
-				self.last_reply = curtime
-				status = getattr(self, treply)(channel, user, message)
-				if status == True: return
+			if not curtime >= self.last_reply+20:
+				logger.logger.warning('Timed reply cooldown left %d', self.last_reply+20-curtime)
+				return
+			self.last_reply = curtime
+			status = getattr(self, treply)(channel, user, message)
+			if status == True: return
 
 	def _get_replies(self):
 		return sorted([reply for reply in dir(self) if reply.startswith('reply_')])
@@ -317,6 +319,18 @@ class GentooBot(GentooBotFrame):
 				self.say(channel, "[URI] %s" % title)
 				return True
 
+	def reply_2_brain(self, channel, user, msg):
+		"""Reply with a randomly generated sentence based on ``msg`"""
+		my_nick = self.nick.lower()
+		if msg.lower().startswith(my_nick):
+			msg = ' '.join(msg.split()[1:])
+			self.tell(channel, user, brain.generate_sentence(msg))
+			return True
+		elif re.search(r'\b%s\b' % my_nick, msg, re.I):
+			self.say(channel, brain.generate_sentence(msg))
+			return True
+		return
+
 	def treply_1_installgentoo(self, channel, user, msg):
 		if self.ig_keywords:
 			for keyword in self.ig_keywords:
@@ -344,18 +358,6 @@ class GentooBot(GentooBotFrame):
 			logger.logger.warning('replying with %s', choice)
 			self.tell(channel, user, choice)
 			return True
-
-	def treply_5_brain(self, channel, user, msg):
-		"""Reply with a randomly generated sentence based on ``msg`"""
-		my_nick = self.nick.lower()
-		if msg.lower().startswith(my_nick):
-			msg = ' '.join(msg.split()[1:])
-			self.tell(channel, user, brain.generate_sentence(msg))
-			return True
-		elif re.search(r'\b%s\b' % my_nick, msg, re.I):
-			self.say(channel, brain.generate_sentence(msg))
-			return True
-		return
 
 def main():
 	opt = get_config('CONNECTION')
