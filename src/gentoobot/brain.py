@@ -18,6 +18,8 @@ import re, json, random
 import os.path
 from shutil import copy2
 from collections import defaultdict
+from thread import start_new_thread
+from signal import signal, SIGINT, SIG_IGN, SIG_DFL
 
 from gentoobot.logger import logger
 from gentoobot.config import config_base
@@ -26,6 +28,7 @@ class Brain(object):
 	def __init__(self, file):
 		self.file = file
 		self.brain = self.populate_brain(file)
+		self.buffer, self.max_buffer = 8, 10
 
 	def populate_brain(self, file):
 		"""Populate the brain from a json file"""
@@ -44,7 +47,17 @@ class Brain(object):
 		logger.warning('backing up the brain file to %s' % bkp)
 		copy2(file, bkp)
 
+		logger.warning('Loaded brain, found %d keys', len(brain))
 		return brain
+
+	def save_brain(self,):
+		"""Save the brain to a file"""
+		self.buffer += 1
+		if self.buffer >= self.max_buffer:
+			logger.warning('Writing the buffer file!')
+			with open(self.file, 'w') as buffer_file:
+				json.dump(self.brain, buffer_file)
+			logger.warning('Finished writting the buffer file!')
 
 	def process_word(self, word):
 		word = re.sub(r'[^\w]+', '', word)
@@ -62,8 +75,9 @@ class Brain(object):
 			key = ' '.join((word, next))
 			self.brain[key] += [val1, val2]
 
-		with open(self.file, 'w') as brain_file:
-			json.dump(self.brain, brain_file)
+		signal(SIGINT, SIG_IGN)
+		self.save_brain()
+		signal(SIGINT, SIG_DFL)
 
 	def generate_sentence(self, msg):
 		"""Generate a sentence based on msg"""
