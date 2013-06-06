@@ -317,14 +317,13 @@ class GentooBot(GentooBotFrame):
 			return True
 
 	def reply_5_smiley(self, channel, user, msg):
-		for pat in self.smiley_pattern:
-			smileys = re.findall(pat, msg)
-			if smileys:
-				logger.logger.warning('Found %s in %s', ', '.join(smileys), msg)
-				choice = random.choice(smileys)
-				logger.logger.warning('replying with %s', choice)
-				self.tell(channel, user, choice)
-				return True
+		smileys = re.findall(self.smiley_pattern, msg)
+		if smileys:
+			logger.logger.warning('Found %s in %s', ', '.join(smileys), msg)
+			choice = random.choice(smileys)
+			logger.logger.warning('replying with %s', choice)
+			self.tell(channel, user, choice)
+			return True
 
 def main():
 	opt = get_config('CONNECTION')
