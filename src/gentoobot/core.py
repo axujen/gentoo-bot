@@ -340,7 +340,7 @@ class GentooBot(GentooBotFrame):
 			msg = ' '.join(msg.split()[1:])
 			self.tell(channel, user, brain.generate_sentence(msg))
 			return True
-		elif my_nick in msg.lower():
+		elif re.search(r'\b%s\b' % my_nick, msg, re.I):
 			self.say(channel, brain.generate_sentence(msg))
 			return True
 		return
