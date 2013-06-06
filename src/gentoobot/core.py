@@ -277,41 +277,44 @@ class GentooBot(GentooBotFrame):
 	def _get_treplies(self):
 		return sorted([reply for reply in dir(self) if reply.startswith('treply_')])
 
+	def _4chan_title(self, path):
+		path = path.split('/')
+		board = path[1]
+		thread = path[-1]
+		op = json.loads(urlopen('https://api.4chan.org/%s/res/%s.json' %\
+			(board, thread)).read().decode())['posts'][0]
+		comment = subject = None
+		replies, images = op['replies'], op['images']
+
+		if 'com' in op:
+			comment = BeautifulSoup(op['com']).text
+			if len(comment) > 100: comment = comment[:100]+'...'
+		if 'sub' in op: subject = op['sub']
+
+		message = 'Board: /%s/ | R: %s, I: %s | Subject: %s | Comment: %s'\
+				% (board, replies, images, str(subject), str(comment))
+
+		return message
+
 	def reply_1_url_title(self, channel, user, msg):
 		"""if found, resolve the title of a url in the message."""
-		url_pattern = self.url_pattern
-		if re.search(url_pattern, msg):
-			url = re.findall(url_pattern, msg)[0][0]
-			r = requests.get(url)
-
-			ctype = r.headers['content-type']
-			if not 'text/html' in ctype:
-				return
+		if re.search(self.url_pattern, msg):
+			url = re.findall(self.url_pattern, msg)[0][0]
 
 			if url.startswith('www.'):
 				url = 'http://'+url
+
 			logger.logger.warning('Detected url %s' % str(url))
+			headers = requests.get(url).headers
+			if not 'text/html' in headers['content-type']:
+				self.say(channel, '[URI] content type `%s`' % headers['content-type'])
+				return
+
 			p_url = urlparse(url)
 			if p_url.netloc == 'boards.4chan.org' and re.match(r'^/\w+/res/(\d+|\d+#p\d+)$', p_url.path):
 				logger.logger.warning('%s is a 4chan thread' % (url))
-				path = p_url.path.split('/')
-				board = path[1]
-				thread = path[-1]
-				op = json.loads(urlopen('https://api.4chan.org/%s/res/%s.json' %\
-					(board, thread)).read().decode())['posts'][0]
-				comment = subject = None
-				replies, images = op['replies'], op['images']
-
-				if 'com' in op:
-					comment = BeautifulSoup(op['com']).text
-					if len(comment) > 100: comment = comment[:100]+'...'
-				if 'sub' in op: subject = op['sub']
-
-				message = 'Board: /%s/ | R: %s, I: %s | Subject: %s | Comment: %s'\
-						% (board, replies, images, str(subject), str(comment))
-
-				self.say(channel, message)
-				return True
+				self.say(channel, self._4chan_title(p_url.path))
+				return
 
 			data = urlopen(url).read()
 			soup = BeautifulSoup(data)
