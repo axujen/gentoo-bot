@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
+import re, os
 from shlex import shlex
 from urllib import urlencode, urlopen
 from json import loads
@@ -21,6 +21,7 @@ from inspect import getargspec
 
 from pylast import LastFMNetwork, WSError
 from bs4 import BeautifulSoup
+import ftputil
 
 from config import get_config, save_db, load_db
 
@@ -92,7 +93,8 @@ class Commands():
 			return "Check your privilege."
 
 		if registered and not self._is_registered(user, bot):
-			return "You must be registered to use that command"
+			return "You must be registered and logged in to your irc nick to use"\
+					"this command"
 
 		if argslen < nargs:
 			suffix = ''
@@ -403,6 +405,21 @@ class UserCommands(Commands):
 			bot.part(channel)
 
 		return "Leaving %s" % ', '.join(channels)
+
+	def do_gftp(self, user, arguments, bot, nargs=1):
+		"""gftp ``search query``
+
+		Search the gftp for ``search query``
+		Note: you can use regex."""
+		ftp = ftputil.FTPHost('ftp.installgentoo.com', 'install', 'gen2')
+		dirs = ftp.walk(ftp.curdir, topdown=True)
+		search = arguments[0]
+		for dir in dirs:
+			files = dir[2]
+			for file in files:
+				if re.search(search, file, re.I):
+					return "ftp://install:gen2@ftp.installgentoo.com"+os.path.join(dir[0], file)[1:]
+
 
 lastfm_conf = get_config('LASTFM')
 commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])

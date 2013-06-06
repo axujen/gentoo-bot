@@ -76,7 +76,6 @@ def get_config(section):
 	else:
 		config.read(configfile)
 
-
 	opt = dict(config.items(section.upper()))
 
 	for arg in args:
