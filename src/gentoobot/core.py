@@ -317,7 +317,7 @@ class GentooBot(GentooBotFrame):
 			return True
 
 	def reply_5_smiley(self, channel, user, msg):
-		for pat in self.smiley_patterns:
+		for pat in self.smiley_pattern:
 			smileys = re.findall(pat, msg)
 			if smileys:
 				logger.logger.warning('Found %s in %s', ', '.join(smileys), msg)
