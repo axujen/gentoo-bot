@@ -419,6 +419,7 @@ class UserCommands(Commands):
 			for file in files:
 				if re.search(search, file, re.I):
 					return "ftp://install:gen2@ftp.installgentoo.com"+os.path.join(dir[0], file)[1:]
+		return "No results found"
 
 
 lastfm_conf = get_config('LASTFM')
