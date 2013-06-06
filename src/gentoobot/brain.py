@@ -63,7 +63,7 @@ class Brain(object):
 			self.brain[key] += [val1, val2]
 
 		with open(self.file, 'w') as brain_file:
-			json.dump(self.file, brain_file)
+			json.dump(self.brain, brain_file)
 
 	def generate_sentence(self, msg):
 		"""Generate a sentence based on msg"""
