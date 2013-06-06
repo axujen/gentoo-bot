@@ -16,6 +16,7 @@
 
 import re, json, random
 import os.path
+from shutil import copy2
 from collections import defaultdict
 
 from gentoobot.logger import logger
@@ -23,6 +24,14 @@ from gentoobot.config import config_base
 
 def populate_brain(file):
 	"""Populate the brain from a json file"""
+	# backup the original brain just in case.
+	n = 0
+	bkp = '.'.join((file, 'bkp', str(n)))
+	while os.path.exists(bkp):
+		n += 1
+		bkp = '.'.join((file, 'bkp', str(n)))
+	logger.warning('backing up the brain file to %s' % bkp)
+	copy2(file, bkp)
 	logger.warning('Populating the bots brain from %s', file)
 	with open(file, 'r') as f:
 		data = json.load(f)
