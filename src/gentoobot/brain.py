@@ -22,80 +22,69 @@ from collections import defaultdict
 from gentoobot.logger import logger
 from gentoobot.config import config_base
 
-def populate_brain(file):
-	"""Populate the brain from a json file"""
-	logger.warning('Populating the bots brain from %s', file)
-	with open(file, 'r') as f:
-		brain = json.load(f)
+class Brain(object):
+	def __init__(self, file):
+		self.file = file
+		self.brain = self.populate_brain(file)
 
-	# backup the original brain just in case.
-	bkp = '.'.join((file, 'bkp'))
-	if os.path.exists(bkp):
-		os.remove(bkp)
-	logger.warning('backing up the brain file to %s' % bkp)
-	copy2(file, bkp)
+	def populate_brain(self, file):
+		"""Populate the brain from a json file"""
+		logger.warning('Populating the bots brain from %s', file)
+		with open(file, 'r') as f:
+			tmp_brain = json.load(f)
+		brain = defaultdict(list)
 
-brain = defaultdict(list)
-brain_file =  os.path.join(config_base, 'brain.txt')
-populate_brain(brain_file)
-global buffer
-buffer = 0
+		for item in tmp_brain:
+			brain[item] = tmp_brain[item]
 
-def add_to_brain(key, value):
-	"""docstring for add_to_brain"""
-	global buffer
-	brain[key].append(value)
-	if buffer >= 2:
-		buffer = 0
-		with open(brain_file, 'w') as brn:
-			json.dump(brain, brn)
+		# backup the original brain just in case.
+		bkp = '.'.join((file, 'bkp'))
+		if os.path.exists(bkp):
+			os.remove(bkp)
+		logger.warning('backing up the brain file to %s' % bkp)
+		copy2(file, bkp)
 
-def process_word(word):
-	word = re.sub(r'[^\w]+', '', word)
-	return word
+		return brain
 
-def process_line(line):
-	global buffer
-	words = line.split()
-	buffer += 1
-	for id, word in enumerate(words):
-		try:
-			next = process_word(words[id+1])
-			val = process_word(words[id+2])
-		except IndexError:
-			return
-		word = process_word(word)
+	def process_word(self, word):
+		word = re.sub(r'[^\w]+', '', word)
+		return word
 
-		if None in (word, next, val):
-			return
+	def process_line(self, line):
+		words = line.split()
+		for id, word in zip(range(len(words)-3), words):
+			word = self.process_word(word)
+			next = self.process_word(words[id+1])
 
-		key = ' '.join((word, next)).lower()
-		add_to_brain(key, val)
+			val1 = self.process_word(words[id+2])
+			val2 = self.process_word(words[id+3])
 
-		try:
-			val2 = process_word(words[id+3])
-		except IndexError:
-			return
-		if val2 != None:
-			add_to_brain(key, val2)
+			key = ' '.join((word, next))
+			self.brain[key] += [val1, val2]
 
-def generate_sentence(msg):
-	"""Generate a sentence based on msg"""
-	logger.warning('Generating sentence based on %s', msg)
-	sentence = msg.split()
-	gen_sentence = []
-	length = len(sentence)
-	if length > 2:
-		seed = random.randint(0, length-1)
-		w1, w2 = sentence[seed], sentence[seed+1]
-	else:
-		w1, w2 = random.choice(brain.keys()).split()
-	for i in xrange(random.randint(10, 20)):
-		gen_sentence.append(w1)
-		key = ' '.join((w1, w2))
-		if key in brain.keys():
-			w1, w2 = w2, random.choice(brain[key])
+		with open(self.file, 'w') as brain_file:
+			json.dump(self.file, brain_file)
+
+	def generate_sentence(self, msg):
+		"""Generate a sentence based on msg"""
+		logger.warning('Generating sentence based on %s', msg)
+		sentence = msg.split()
+		gen_sentence = []
+		length = len(sentence)
+		if length > 2:
+			seed = random.randint(0, length-1)
+			w1, w2 = sentence[seed], sentence[seed+1]
 		else:
-			w1, w2 = w2, random.choice(brain[random.choice(brain.keys())])
-	gen_sentence.append(w2)
-	return ' '.join(gen_sentence)
+			w1, w2 = random.choice(self.brain.keys()).split()
+		for i in xrange(random.randint(10, 20)):
+			gen_sentence.append(w1)
+			key = ' '.join((w1, w2))
+			if key in self.brain.keys():
+				w1, w2 = w2, random.choice(self.brain[key])
+			else:
+				w1, w2 = w2, random.choice(self.brain[random.choice(self.brain.keys())])
+		gen_sentence.append(w2)
+		return ' '.join(gen_sentence)
+
+brain_file =  os.path.join(config_base, 'brain.txt')
+brain = Brain(brain_file)

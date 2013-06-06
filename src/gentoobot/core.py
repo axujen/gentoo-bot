@@ -31,7 +31,7 @@ from irc.client import NickMask, Event
 from gentoobot import logger
 from gentoobot.config import get_config, load_db
 from gentoobot.commands import commands
-# from gentoobot import brain
+from gentoobot.brain import brain
 
 def convert_bytes(bytes):
     bytes = float(bytes)
@@ -343,16 +343,16 @@ class GentooBot(GentooBotFrame):
 				self.say(channel, "[URI] %s" % title)
 				return True
 
-	# def reply_2_brain(self, channel, user, msg):
-	# 	"""Reply with a randomly generated sentence based on ``msg`"""
-	# 	if msg.startswith(self.nick):
-	# 		msg = ' '.join(msg.split()[1:])
-	# 		self.tell(channel, user, brain.generate_sentence(msg))
-	# 		return True
-	# 	elif re.search(r'\b%s\b' % self.nick, msg):
-	# 		self.say(channel, brain.generate_sentence(msg))
-	# 		return True
-	# 	return
+	def reply_2_brain(self, channel, user, msg):
+		"""Reply with a randomly generated sentence based on ``msg`"""
+		if msg.startswith(self.nick):
+			msg = ' '.join(msg.split()[1:])
+			self.tell(channel, user, brain.generate_sentence(msg))
+			return True
+		elif re.search(r'\b%s\b' % self.nick, msg):
+			self.say(channel, brain.generate_sentence(msg))
+			return True
+		return
 
 	def treply_1_installgentoo(self, channel, user, msg):
 		if self.ig_keywords:
