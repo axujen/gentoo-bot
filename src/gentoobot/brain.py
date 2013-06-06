@@ -28,7 +28,7 @@ class Brain(object):
 	def __init__(self, file):
 		self.file = file
 		self.brain = self.populate_brain(file)
-		self.buffer, self.max_buffer = 8, 10
+		self.buffer, self.max_buffer = 0, 10
 
 	def populate_brain(self, file):
 		"""Populate the brain from a json file"""
@@ -57,6 +57,7 @@ class Brain(object):
 			logger.warning('Writing the buffer file!')
 			with open(self.file, 'w') as buffer_file:
 				json.dump(self.brain, buffer_file)
+			self.buffer = 0
 			logger.warning('Finished writting the buffer file!')
 
 	def process_word(self, word):
