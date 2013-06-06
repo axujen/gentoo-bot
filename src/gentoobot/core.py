@@ -17,7 +17,7 @@
 import re, sys, random, json, time
 from urllib2 import urlopen, HTTPError
 from urlparse import urlparse
-from time import time
+from time import time, sleep
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from thread import start_new_thread
 import traceback

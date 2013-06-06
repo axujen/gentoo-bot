@@ -24,6 +24,13 @@ from gentoobot.config import config_base
 
 def populate_brain(file):
 	"""Populate the brain from a json file"""
+	logger.warning('Populating the bots brain from %s', file)
+	with open(file, 'r') as f:
+		data = json.load(f)
+		for item in data:
+			# remove duplicates
+			brain[item] = set(data[item])
+
 	# backup the original brain just in case.
 	n = 0
 	bkp = '.'.join((file, 'bkp', str(n)))
@@ -32,12 +39,6 @@ def populate_brain(file):
 		bkp = '.'.join((file, 'bkp', str(n)))
 	logger.warning('backing up the brain file to %s' % bkp)
 	copy2(file, bkp)
-	logger.warning('Populating the bots brain from %s', file)
-	with open(file, 'r') as f:
-		data = json.load(f)
-		for item in data:
-			# remove duplicates
-			brain[item] = set(data[item])
 
 brain = defaultdict(set)
 brain_file =  os.path.join(config_base, 'brain.txt')
