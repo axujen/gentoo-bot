@@ -24,6 +24,7 @@ from bs4 import BeautifulSoup
 import ftputil
 
 from config import get_config, save_db, load_db
+from gentoobot import logger
 
 # Raised when you want to force a method to stop executing a command and print
 # the output of this exception
@@ -124,6 +125,8 @@ class Commands():
 				except GottaGoFast as e:
 					bot.say(channel, "%s, %s" % (user.nick, str(e)))
 					return
+				except Exception as e:
+					logger.error_log(e)
 
 	def _is_registered(self, user, bot):
 		"""Return True if a user is registered for his nick."""
@@ -428,9 +431,6 @@ class UserCommands(Commands):
 			shortLink = loads(res)['shorturl']
 			links.append(shortLink)
 		return "Results are %s" % '\n'.join(links)
-
-
-
 
 lastfm_conf = get_config('LASTFM')
 commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
