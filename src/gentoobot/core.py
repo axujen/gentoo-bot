@@ -322,12 +322,11 @@ class GentooBot(GentooBotFrame):
 
 	def reply_2_brain(self, channel, user, msg):
 		"""Reply with a randomly generated sentence based on ``msg`"""
-		my_nick = self.nick.lower()
-		if msg.lower().startswith(my_nick):
+		if msg.startswith(self.nick):
 			msg = ' '.join(msg.split()[1:])
 			self.tell(channel, user, brain.generate_sentence(msg))
 			return True
-		elif re.search(r'\b%s\b' % my_nick, msg, re.I):
+		elif re.search(r'\b%s\b' % self.nick, msg):
 			self.say(channel, brain.generate_sentence(msg))
 			return True
 		return
@@ -367,4 +366,8 @@ def main():
 			password=opt['password'], reconnect=int(misc['reconnect']))
 	logger.logger.warning('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 
-	bot.start()
+	try:
+		bot.start()
+	except KeyboardInterrupt:
+		logger.logger.warning('Disconnecting from the server')
+		bot.disconnect(msg='Bye Bye!')
