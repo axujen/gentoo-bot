@@ -21,7 +21,6 @@ from collections import defaultdict
 import logging
 import logging.handlers
 
-from config import config_base
 
 # Console log
 logger = logging.getLogger('console')
@@ -36,6 +35,8 @@ logger.addHandler(console)
 
 # Channel logs
 ch_format = logging.Formatter('[%(asctime)s] %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+
+from config import config_base
 
 def log_event(server, event):
 	type = event.type

@@ -28,9 +28,10 @@ from thread import start_new_thread
 import irc.bot
 from irc.client import NickMask, Event
 
+from gentoobot import logger
 from gentoobot.config import get_config, load_db
 from gentoobot.commands import commands
-from gentoobot import logger
+from gentoobot import brain
 
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
@@ -240,6 +241,7 @@ class GentooBot(GentooBotFrame):
 
 	def actions(self, channel, user, message):
 		try:
+			brain.process_line(message)
 			start_new_thread(commands.run, (self, channel, user, message))
 			self.reply(channel, user, message)
 		except Exception as e:
@@ -330,6 +332,18 @@ class GentooBot(GentooBotFrame):
 			logger.logger.warning('replying with %s', choice)
 			self.tell(channel, user, choice)
 			return True
+
+	def reply_6_brain(self, channel, user, msg):
+		"""Reply with a randomly generated sentence based on ``msg`"""
+		my_nick = self.nick.lower()
+		if msg.lower().startswith(my_nick):
+			msg = ' '.join(msg.split()[1:])
+			self.tell(channel, user, brain.generate_sentence(msg))
+			return True
+		elif my_nick in msg.lower():
+			self.say(channel, brain.generate_sentence(msg))
+			return True
+		return
 
 def main():
 	opt = get_config('CONNECTION')
