@@ -125,7 +125,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	def on_kick(self, c, e):
 		"""autorejoin when kicked."""
 		logger.log_event(self.server, e)
-		time.sleep(self.reconnect)
+		sleep(self.reconnect)
 		self.join(e.target)
 
 	def join(self, channel):
@@ -182,7 +182,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 			if n >= timeout:
 				return "REQUEST TIMEOUT"
 			n += 1
-			time.sleep(1)
+			sleep(1)
 
 		return self.wholist[nick.lower()]
 
