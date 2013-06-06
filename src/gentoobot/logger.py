@@ -28,7 +28,7 @@ logger = logging.getLogger('console')
 logger.setLevel(logging.DEBUG)
 
 console = logging.StreamHandler()
-console.setLevel(logging.WARNING)
+console.setLevel(logging.INFO)
 
 cformat = logging.Formatter("[%(asctime)s] %(message)s", datefmt="%H:%M")
 console.setFormatter(cformat)
@@ -72,7 +72,7 @@ def chat_log(server, type, source, target, arguments):
 	if not os.path.exists(logdir):
 		os.makedirs(logdir)
 
-	if target == None:
+	if target == None or type == 'nick':
 		# 2deep4me
 		channels = [os.path.split(ch)[1][:-4] for ch in glob("%s%s%s" % (logdir, os.path.sep, "*.log")) if os.path.isfile(ch)]
 	elif target.startswith('#'):
@@ -99,22 +99,20 @@ def format_log(type, source, target, arguments):
 	entry = None
 	if type in ('pubmsg', 'privmsg'):
 		entry = "%s\t%s" % (source.nick, arguments[0])
+	elif type in ('pubnotice', 'privnotice'):
+		entry = '-- Notice(%s) -> %s: %s' % (source.nick, target, arguments[0])
 	elif type == 'join':
 		entry = "--> %s (%s) has joined the channel" % (source.nick, source)
 	elif type == 'part':
 		entry = "<-- %s (%s) has left the channel" % (source.nick, source)
-	elif type == 'nick':
-		entry = '-- %s (%s) is now known as %s' % (source.nick, source, target)
+	elif type == 'kick':
+		entry = '<-- %s has kicked %s from the channel (%s)' % (source.nick, arguments[0], arguments[1])
 	elif type == 'quit':
 		entry = '<-- %s (%s) has quit (%s) ' % (source.nick, source, arguments[0])
 	elif type == 'action':
 		entry = '\t*\t%s %s' % (source.split('!')[0], arguments[0])
 	elif type == 'nick':
 		entry = '-- %s (%s) is now known as %s' % (source.nick, source, target)
-	elif type in ('pubnotice', 'privnotice'):
-		entry = '-- Notice(%s) -> %s: %s' % (source.nick, target, arguments[0])
 	elif type == 'mode':
 		entry = '-- Mode %s [ %s %s ] by %s' % (target, arguments[0], arguments[1], source.nick)
-	elif type == 'kick':
-		entry = '<-- %s has kicked %s from the channel (%s)' % (source.nick, arguments[0], arguments[1])
 	return entry
