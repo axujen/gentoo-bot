@@ -85,9 +85,12 @@ def generate_sentence(msg):
 	sentence = msg.split()
 	gen_sentence = []
 	length = len(sentence)
-	seed = random.randint(0, length-1)
-	w1, w2 = sentence[seed], sentence[seed+1]
-	for i in xrange(length+random.randint(-5, 5)):
+	if length > 2:
+		seed = random.randint(0, length-1)
+		w1, w2 = sentence[seed], sentence[seed+1]
+	else:
+		w1, w2 = random.choice(brain.keys()).split()
+	for i in xrange(random.randint(10, 20)):
 		gen_sentence.append(w1)
 		key = ' '.join((w1, w2))
 		if key in brain.keys():
