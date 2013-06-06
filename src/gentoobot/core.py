@@ -17,14 +17,14 @@
 import re, sys, random, json, time
 from urllib2 import urlopen, HTTPError
 from urlparse import urlparse
-import requests
-import traceback
-import chardet
-
-from bs4 import BeautifulSoup
+from time import time
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from thread import start_new_thread
+import traceback
 
+import requests
+import chardet
+from bs4 import BeautifulSoup
 import irc.bot
 from irc.client import NickMask, Event
 
@@ -230,6 +230,8 @@ class GentooBot(GentooBotFrame):
 			self.ig_keywords = [None]
 
 		self.replies = self._get_replies()
+		self.treplies = self._get_treplies()
+		self.last_reply = 0
 		self.greetings = ('Hello %s!', 'Welcome %s!', 'Everybody rejoice! %s is here!')
 		self.ig_replies = (
 		'Install Gentoo.', 'You know what you should do? you should install gentoo.',
@@ -259,8 +261,18 @@ class GentooBot(GentooBotFrame):
 			status = getattr(self, reply)(channel, user, message)
 			if status == True: return
 
+		curtime = int(time())
+		for treply in self.treplies:
+			if curtime >= self.last_reply+10:
+				self.last_reply = curtime
+				status = getattr(self, treply)(channel, user, message)
+				if status == True: return
+
 	def _get_replies(self):
 		return sorted([reply for reply in dir(self) if reply.startswith('reply_')])
+
+	def _get_treplies(self):
+		return sorted([reply for reply in dir(self) if reply.startswith('treply_')])
 
 	def reply_1_url_title(self, channel, user, msg):
 		"""if found, resolve the title of a url in the message."""
@@ -305,7 +317,7 @@ class GentooBot(GentooBotFrame):
 				self.say(channel, "[URI] %s" % title)
 				return True
 
-	def reply_2_installgentoo(self, channel, user, msg):
+	def treply_1_installgentoo(self, channel, user, msg):
 		if self.ig_keywords:
 			for keyword in self.ig_keywords:
 				if re.search(r"\b(%s)\b" % keyword, msg, re.I):
@@ -313,18 +325,18 @@ class GentooBot(GentooBotFrame):
 					self.tell(channel, user, reply)
 					return True
 
-	def reply_3_bsd(self, channel, user, msg):
+	def treply_2_bsd(self, channel, user, msg):
 		if re.search(r'(^|[^\d.-])bsd\b', msg, re.I):
 			self.tell(channel, user, 'bsd is dum.')
 			return True
 
-	def reply_4_implying(self, channel, user, msg):
+	def treply_3_implying(self, channel, user, msg):
 		"""implying implications"""
 		if msg.startswith(('implying', '>implying')):
 			self.tell(channel, user, 'Implying implications')
 			return True
 
-	def reply_5_smiley(self, channel, user, msg):
+	def treply_4_smiley(self, channel, user, msg):
 		smileys = re.findall(self.smiley_pattern, msg)
 		if smileys:
 			logger.logger.warning('Found %s in %s', ', '.join(smileys), msg)
@@ -333,7 +345,7 @@ class GentooBot(GentooBotFrame):
 			self.tell(channel, user, choice)
 			return True
 
-	def reply_6_brain(self, channel, user, msg):
+	def treply_5_brain(self, channel, user, msg):
 		"""Reply with a randomly generated sentence based on ``msg`"""
 		my_nick = self.nick.lower()
 		if msg.lower().startswith(my_nick):
