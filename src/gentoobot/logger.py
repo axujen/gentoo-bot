@@ -44,7 +44,7 @@ def log_event(server, event):
 	target = event.target
 	arguments = event.arguments
 	msg = '(%s from %s to %s) %s' % (type, source, target,
-			'; '.join([str(arg) for arg in arguments]))
+			'; '.join([arg for arg in arguments]))
 	logger.info(msg)
 	chat_log(server, type, source, target, arguments)
 
