@@ -26,10 +26,7 @@ def populate_brain(file):
 	"""Populate the brain from a json file"""
 	logger.warning('Populating the bots brain from %s', file)
 	with open(file, 'r') as f:
-		data = json.load(f)
-		for item in data:
-			# remove duplicates
-			brain[item] = set(data[item])
+		brain = json.load(f)
 
 	# backup the original brain just in case.
 	bkp = '.'.join((file, 'bkp'))
@@ -38,7 +35,7 @@ def populate_brain(file):
 	logger.warning('backing up the brain file to %s' % bkp)
 	copy2(file, bkp)
 
-brain = defaultdict(set)
+brain = defaultdict(list)
 brain_file =  os.path.join(config_base, 'brain.txt')
 populate_brain(brain_file)
 global buffer
@@ -47,14 +44,11 @@ buffer = 0
 def add_to_brain(key, value):
 	"""docstring for add_to_brain"""
 	global buffer
-	brain[key].add(value)
+	brain[key].append(value)
 	if buffer >= 2:
 		buffer = 0
-		saved_brain = defaultdict(list)
-		for item in brain:
-			saved_brain[item] = list(brain[item])
 		with open(brain_file, 'w') as brn:
-			json.dump(saved_brain, brn)
+			json.dump(brain, brn)
 
 def process_word(word):
 	word = re.sub(r'[^\w]+', '', word)
@@ -89,11 +83,16 @@ def generate_sentence(msg):
 	"""Generate a sentence based on msg"""
 	logger.warning('Generating sentence based on %s', msg)
 	sentence = msg.split()
-	for id, word in enumerate(sentence):
-		try:
-			next = sentence[id+1]
-		except IndexError:
-			return ' '.join(sentence)
-		key = ' '.join((word, next)).lower()
+	gen_sentence = []
+	length = len(sentence)
+	seed = random.randint(0, length-1)
+	w1, w2 = sentence[seed], sentence[seed+1]
+	for i in xrange(length+random.randint(-5, 5)):
+		gen_sentence.append(w1)
+		key = ' '.join((w1, w2))
 		if key in brain.keys():
-			sentence[id] = random.choice(list(brain[key]))
+			w1, w2 = w2, random.choice(brain[key])
+		else:
+			w1, w2 = w2, random.choice(brain[random.choice(brain.keys())])
+	gen_sentence.append(w2)
+	return ' '.join(gen_sentence)
