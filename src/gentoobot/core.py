@@ -233,16 +233,7 @@ class GentooBot(GentooBotFrame):
 		'Gentoo, install it motherfucker.')
 
 		self.url_pattern = re.compile(r"(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
-		# self.smiley_pattern = re.compile(r"([:x=;]{1,2}(?:\)|D|P|O|o))(?:\s|$)", re.I)
-		self.smiley_patterns = [
-				re.compile(r"[0>Qo^.][_-]{1,32}[0<Qo^.][;']?"),
-				re.compile(r"[0>Qo^-][.,][-^Q0<o][;']?"),
-				re.compile(r">?[x=:;]-*[/3LVD()}xOSCP<>]{1,32}"),
-				re.compile(r"(\:|;)-?(\]|\[)"),
-				re.compile(r"(>_>|<_<|4:\})"),
-				re.compile(r"1,11\( ´ - `\)"),
-				re.compile(r";_{1,32};"),
-				re.compile(r"[DOSC\(\)]-?[\:;]|[>\=-][o5][-\=<]")]
+		self.smiley_pattern = re.compile(r"([:x=;]{1,2}(?:\)|D|P|O|o))(?:\s|$)", re.I)
 
 	def actions(self, channel, user, message):
 		try:
