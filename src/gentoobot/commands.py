@@ -174,7 +174,7 @@ class Commands():
 						help += "\nNote: You must be in my admin list to use "\
 							"this command."
 
-					return "Usage: %s%s" % (self.prefix, help)
+					return "Usage %s%s" % (self.prefix, help)
 			return 'Unknown command "%s"' % cmd
 
 class UserCommands(Commands):
@@ -189,7 +189,7 @@ class UserCommands(Commands):
 		Perform a google search query."""
 		search = ' '.join(arguments)
 		query = urlencode({'q':search})
-		url = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&%s'\
+		url = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&num=1&%s'\
 				% query)
 		response = loads(url.read())
 		try:
@@ -406,20 +406,30 @@ class UserCommands(Commands):
 
 		return "Leaving %s" % ', '.join(channels)
 
-	def do_gftp(self, user, arguments, bot, nargs=1):
-		"""gftp ``search query``
+	def do_gg(self, user, arguments, bot, nargs=1):
+		"""gg ``search query``
 
-		Search the gftp for ``search query``
-		Note: you can use regex."""
-		ftp = ftputil.FTPHost('ftp.installgentoo.com', 'install', 'gen2')
-		dirs = ftp.walk(ftp.curdir, topdown=True)
-		search = arguments[0]
-		for dir in dirs:
-			files = dir[2]
-			for file in files:
-				if re.search(search, file, re.I):
-					return "ftp://install:gen2@ftp.installgentoo.com"+os.path.join(dir[0], file)[1:]
-		return "No results found"
+		Perform a google search query and return multiple shortened result links"""
+		search = ' '.join(arguments)
+		query = urlencode({'q':search})
+		url = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&num=10&%s'\
+				% query)
+		response = loads(url.read())
+		try:
+			results = response['responseData']['results']
+		except (KeyError, IndexError):
+			return 'No results found for "%s"' % (search)
+		links = []
+		for result in results:
+			link = result['unescapedUrl']
+			param = urlencode({'url':link})
+			query = urlopen('http://is.gd/create.php?format=json&%s' % param)
+			res = query.read()
+			shortLink = loads(res)['shorturl']
+			links.append(shortLink)
+		return "Results are %s" % '\n'.join(links)
+
+
 
 
 lastfm_conf = get_config('LASTFM')
