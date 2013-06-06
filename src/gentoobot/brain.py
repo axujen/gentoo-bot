@@ -32,11 +32,9 @@ def populate_brain(file):
 			brain[item] = set(data[item])
 
 	# backup the original brain just in case.
-	n = 0
-	bkp = '.'.join((file, 'bkp', str(n)))
-	while os.path.exists(bkp):
-		n += 1
-		bkp = '.'.join((file, 'bkp', str(n)))
+	bkp = '.'.join((file, 'bkp'))
+	if os.path.exists(bkp):
+		os.remove(bkp)
 	logger.warning('backing up the brain file to %s' % bkp)
 	copy2(file, bkp)
 
