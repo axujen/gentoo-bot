@@ -69,7 +69,10 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		channel = e.target
 		user = e.source
 		message = e.arguments[0]
-		self.actions(channel, user, message)
+		try:
+			self.actions(channel, user, message)
+		except Exception as e:
+			logger.error_log(e)
 
 	def on_privmsg(self, c, e):
 		logger.log_event(self.server, e)
@@ -243,7 +246,10 @@ class GentooBot(GentooBotFrame):
 			logger.error_log(e, self.server)
 
 	def private_actions(self, user, message):
-		start_new_thread(commands.run, (self, user.nick, user, message))
+		try:
+			start_new_thread(commands.run, (self, user.nick, user, message))
+		except Exception as e:
+			logger.error_log(e)
 
 	def reply(self, channel, user, message):
 		"""Reply to something"""
@@ -332,7 +338,4 @@ def main():
 			password=opt['password'], reconnect=int(misc['reconnect']))
 	logger.logger.warning('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 
-	try:
-		start_new_thread(bot.start())
-	except Exception as e:
-		logger.error_log(e)
+	bot.start()
