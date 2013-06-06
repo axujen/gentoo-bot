@@ -266,9 +266,10 @@ class GentooBot(GentooBotFrame):
 			if not curtime >= self.last_reply+20:
 				logger.logger.warning('Timed reply cooldown left %d', self.last_reply+20-curtime)
 				return
-			self.last_reply = curtime
 			status = getattr(self, treply)(channel, user, message)
-			if status == True: return
+			if status == True:
+				self.last_reply = curtime
+				return
 
 	def _get_replies(self):
 		return sorted([reply for reply in dir(self) if reply.startswith('reply_')])
