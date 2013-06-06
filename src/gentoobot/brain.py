@@ -27,25 +27,40 @@ def populate_brain(file):
 	with open(file, 'r') as f:
 		data = json.load(f)
 		for item in data:
-			brain[item] = data[item]
+			# remove duplicates
+			brain[item] = set(data[item])
 
-brain = defaultdict(list)
+brain = defaultdict(set)
 brain_file =  os.path.join(config_base, 'brain.txt')
 populate_brain(brain_file)
+global buffer
+buffer = 0
+
+def add_to_brain(key, value):
+	"""docstring for add_to_brain"""
+	global buffer
+	brain[key].add(value)
+	if buffer >= 2:
+		buffer = 0
+		saved_brain = defaultdict(list)
+		for item in brain:
+			saved_brain[item] = list(brain[item])
+		with open(brain_file, 'w') as brn:
+			json.dump(saved_brain, brn)
 
 def process_word(word):
 	word = re.sub(r'[^\w]+', '', word)
 	return word
 
 def process_line(line):
+	global buffer
 	words = line.split()
+	buffer += 1
 	for id, word in enumerate(words):
 		try:
 			next = process_word(words[id+1])
 			val = process_word(words[id+2])
 		except IndexError:
-			with open(brain_file, 'w') as brn:
-				json.dump(brain, brn)
 			return
 		word = process_word(word)
 
@@ -53,18 +68,14 @@ def process_line(line):
 			return
 
 		key = ' '.join((word, next)).lower()
-		brain[key].append(val)
+		add_to_brain(key, val)
 
 		try:
 			val2 = process_word(words[id+3])
 		except IndexError:
-			with open(brain_file, 'w') as brn:
-				json.dump(brain, brn)
 			return
 		if val2 != None:
-			brain[key].append(val2)
-		with open(brain_file, 'w') as brn:
-			json.dump(brain, brn)
+			add_to_brain(key, val2)
 
 def generate_sentence(msg):
 	"""Generate a sentence based on msg"""
