@@ -33,12 +33,12 @@ class Brain(object):
 	def populate_brain(self, file):
 		"""Populate the brain from a json file"""
 		logger.warning('Populating the bots brain from %s', file)
+		brain = defaultdict(set)
 		with open(file, 'r') as f:
 			tmp_brain = json.load(f)
-		brain = defaultdict(list)
 
 		for item in tmp_brain:
-			brain[item] = tmp_brain[item]
+			brain[item] = set(tmp_brain[item])
 
 		# backup the original brain just in case.
 		bkp = '.'.join((file, 'bkp'))
@@ -50,13 +50,16 @@ class Brain(object):
 		logger.warning('Loaded brain, found %d keys', len(brain))
 		return brain
 
-	def save_brain(self,):
+	def save_brain(self):
 		"""Save the brain to a file"""
 		self.buffer += 1
 		if self.buffer >= self.max_buffer:
 			logger.warning('Writing the buffer file!')
+			brain = {}
+			for item in self.brain:
+				brain[item] = list(self.brain[item])
 			with open(self.file, 'w') as buffer_file:
-				json.dump(self.brain, buffer_file)
+				json.dump(brain, buffer_file)
 			self.buffer = 0
 			logger.warning('Finished writting the buffer file!')
 
@@ -66,6 +69,7 @@ class Brain(object):
 
 	def process_line(self, line):
 		words = line.split()
+		linebrain = defaultdict(set)
 		for id, word in zip(range(len(words)-3), words):
 			word = self.process_word(word)
 			next = self.process_word(words[id+1])
@@ -74,8 +78,10 @@ class Brain(object):
 			val2 = self.process_word(words[id+3])
 
 			key = ' '.join((word, next))
-			self.brain[key] += [val1, val2]
+			linebrain[key].update(( val1, val2 ))
+			self.brain[key].update(( val1, val2 ))
 
+		return linebrain
 		signal(SIGINT, SIG_IGN)
 		self.save_brain()
 		signal(SIGINT, SIG_DFL)
@@ -83,23 +89,24 @@ class Brain(object):
 	def generate_sentence(self, msg):
 		"""Generate a sentence based on msg"""
 		logger.warning('Generating sentence based on %s', msg)
-		sentence = msg.split()
-		gen_sentence = []
-		length = len(sentence)
-		if length > 2:
-			seed = random.randint(0, length-1)
-			w1, w2 = sentence[seed], sentence[seed+1]
-		else:
-			w1, w2 = random.choice(self.brain.keys()).split()
-		for i in xrange(random.randint(10, 20)):
-			gen_sentence.append(w1)
-			key = ' '.join((w1, w2))
-			if key in self.brain.keys():
-				w1, w2 = w2, random.choice(self.brain[key])
+		words = msg.split()
+		seed = random.randint(0, len(words)-2)
+		seed, next, = words[seed], words[seed+1]
+		w1, w2 = seed, next
+		sentence, w = [w1, w2], 2
+		for i in range(random.randint(len(words)-5, len(words)+5)):
+			key = ' '.join((w1, w2)).lower()
+			if key in self.brain:
+				w3 = random.choice(list(self.brain[key]))
 			else:
-				w1, w2 = w2, random.choice(self.brain[random.choice(self.brain.keys())])
-		gen_sentence.append(w2)
-		return ' '.join(gen_sentence)
+				try:
+					w3 = words[w]
+				except IndexError:
+					return ' '.join(sentence)
+			sentence.append(w3)
+			w1, w2 = w2, w3
+			w += 1
+		return ' '.join(sentence)
 
 brain_file =  os.path.join(config_base, 'brain.txt')
 brain = Brain(brain_file)
