@@ -51,6 +51,12 @@ def convert_bytes(bytes):
         size = '%.2fb' % bytes
     return size
 
+# Because fuck codecs
+import codecs
+def strict_handler(exception):
+	return codecs.replace_errors(exception)
+codecs.register_error("strict", strict_handler)
+
 class GentooBotFrame(irc.bot.SingleServerIRCBot):
 	"""Bot framework"""
 
