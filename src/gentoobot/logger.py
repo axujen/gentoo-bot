@@ -26,7 +26,7 @@ logger = logging.getLogger('console')
 logger.setLevel(logging.DEBUG)
 
 console = logging.StreamHandler()
-console.setLevel(logging.INFO)
+console.setLevel(logging.WARNING)
 
 cformat = logging.Formatter("[%(asctime)s] %(message)s", datefmt="%H:%M")
 console.setFormatter(cformat)
@@ -35,7 +35,10 @@ logger.addHandler(console)
 # Channel logs
 ch_format = logging.Formatter('[%(asctime)s] %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
 
-from config import config_base
+from config import config_base, get_config
+options = get_config('OPTIONS')
+if options['verbose']:
+	console.setLevel(logging.INFO)
 
 def log_event(server, event):
 	type = event.type

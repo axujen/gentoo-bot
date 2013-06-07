@@ -75,7 +75,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.password = password
 
 		self.wholist = {}
-		self.brain = Brain(os.path.join(config_base, 'brain.txt'))
+		self.brain = Brain()
 
 	def on_welcome(self, c, e):
 		logger.log_event(self.server, e)
@@ -250,22 +250,23 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 class GentooBot(GentooBotFrame):
 	"""The actual bot"""
-	def __init__(self, server, port, channel, nick, password=None,
-			reconnect=5):
-		super(GentooBot, self).__init__(server, port, channel, nick, password,
-				reconnect)
+	def __init__(self, server, port, channel, nick, password=None, reconnect=5):
+		super(GentooBot,self).__init__(server,port,channel,nick,password,reconnect)
+		options = get_config('OPTIONS')
+
+		self.chattiness = options['chattiness']
 
 		self.admins = load_db(server, "admins")
 		self.banned_words = load_db(server, 'banned_words')
 		self.ig_keywords = load_db(server, 'ig_keywords')
+
 		if self.ig_keywords == None:
 			self.ig_keywords = [None]
 
-		self.chattiness = 3
 		self.replies = self._get_replies()
 		self.treplies = self._get_treplies()
 		self.last_reply = 0
-		self.greetings = ('Hello %s!', 'Welcome %s!', 'Everybody rejoice! %s is here!')
+
 		self.ig_replies = (
 		'Install Gentoo.', 'You know what you should do? you should install gentoo.',
 		'Have you ever heard of this os? its called gentoo and i think you should install it.',
@@ -401,12 +402,11 @@ class GentooBot(GentooBotFrame):
 			return True
 
 def main():
-	opt = get_config('CONNECTION')
-	misc = get_config('MISC')
-	bot = GentooBot(opt['server'],opt['port'],opt['channel'],opt['nick'],
-			password=opt['password'], reconnect=int(misc['reconnect']))
-	logger.logger.warning('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
-
+	c = get_config('CONNECTION')
+	bot = GentooBot(c['server'],c['port'],c['channel'],c['nick'], c['password'],
+			c['reconnect'])
+	logger.logger.warning('Connecting %s to %s in %s' % (c['nick'],c['channel'],
+		c['server']))
 	signal(SIGINT, bot.quit)
 	try:
 		bot.start()

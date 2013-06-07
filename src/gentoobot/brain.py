@@ -22,11 +22,11 @@ import redis
 from gentoobot.logger import logger
 
 class Brain(object):
-	def __init__(self, file):
+	def __init__(self):
 		self.db = redis.Redis('localhost', db=0)
 
 	def save_brain(self):
-		"""Save the brain to a file"""
+		"""Save the database to disk"""
 		logger.warning('Writing the brain database')
 		self.db.save()
 		logger.warning('Finished writting the brain database')

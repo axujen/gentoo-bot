@@ -17,6 +17,7 @@
 import os
 from ConfigParser import ConfigParser
 from argparse import ArgumentParser
+from ast import literal_eval
 import json
 
 
@@ -24,20 +25,23 @@ import json
 config = ConfigParser()
 config_base = '$HOME/.gentoobot/'
 config_base = os.path.normpath(os.path.expandvars(os.path.expanduser(config_base)))
+stored_conf = {}
 
 config.add_section('LASTFM')
 config.set('LASTFM', 'api_pub',		'1af49b4138e72da18bae9e77f1af46aa')
 config.set('LASTFM', 'api_secret',	'3421bd09678c3a191310c5433017e4a6')
 
 config.add_section('CONNECTION')
-config.set('CONNECTION', 'port',	'6667')
-config.set('CONNECTION', 'server',	'irc.installgentoo.com')
-config.set('CONNECTION', 'nick',	'GentooTestBot')
-config.set('CONNECTION', 'channel',	'#/g/test')
-config.set('CONNECTION', 'password', 'None')
+config.set('CONNECTION', 'channel',		'#/g/test')
+config.set('CONNECTION', 'nick',		'GentooTestBot')
+config.set('CONNECTION', 'password',	'None')
+config.set('CONNECTION', 'port',		'6667')
+config.set('CONNECTION', 'reconnect',	'5')
+config.set('CONNECTION', 'server',		'irc.installgentoo.com')
 
-config.add_section('MISC')
-config.set('MISC',	'reconnect', '5')
+config.add_section('OPTIONS')
+config.set('OPTIONS', 'chattiness', '5')
+config.set('OPTIONS', 'verbose',	'False')
 
 # Arguments
 arguments = ArgumentParser(argument_default=None)
@@ -50,38 +54,48 @@ arguments.add_argument('-r', '--reconnect', dest='reconnect', type=int,
 		help='reconnection interval when kicked from a channel or when disconnected')
 arguments.add_argument('--config', dest='config', default=config_base,
 	help='specify an alternative config folder')
+arguments.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+		default=None, help='Turn on verbose output')
 
 from gentoobot.logger import logger
 
 def get_config(section):
 	"""Return a dictionary with options necessary for running the bot"""
 
-	global config_base
-	args = vars(arguments.parse_args())
-	config_base = os.path.normpath(os.path.expanduser(os.path.expandvars(args['config'])))
+	global config_base, stored_conf
+	section = section.upper()
+	if not section in stored_conf:
+		args = vars(arguments.parse_args())
+		config_base = os.path.normpath(os.path.expanduser(os.path.expandvars(args['config'])))
+		configfile = os.path.join(config_base, 'config.cfg')
 
-	if not os.path.exists(config_base):
-		os.makedirs(config_base)
+		if not os.path.exists(config_base):
+			os.makedirs(config_base)
 
-	if not os.path.isdir(config_base):
-		raise ValueError('%s is not a directory' % config_base)
+		if not os.path.isdir(config_base):
+			raise ValueError('%s is not a directory' % config_base)
 
-	configfile = os.path.join(config_base, 'config.cfg')
+		if not os.path.exists(configfile):
+			logger.warning('Creating new configuration file "%s"' % configfile)
+			with open(configfile, 'wb') as f:
+				config.write(f)
+		else:
+			config.read(configfile)
 
-	if not os.path.exists(configfile):
-		logger.warning('Creating new configuration file "%s"' % configfile)
-		with open(configfile, 'wb') as f:
-			config.write(f)
-	else:
-		config.read(configfile)
+		options = dict(config.items(section))
 
-	opt = dict(config.items(section.upper()))
+		for opt in options:
+			try:
+				options[opt] = literal_eval(options[opt])
+			except (ValueError, SyntaxError):
+				continue
 
-	for arg in args:
-		if not args[arg] == None:
-			opt[arg] = args[arg]
+		for arg in args:
+			if not args[arg] == None:
+				options[arg] = args[arg]
+		stored_conf[section] = options
 
-	return opt
+	return stored_conf[section]
 
 def save_db(server, db, object):
 	"""Save a database (json) inside a folder."""
