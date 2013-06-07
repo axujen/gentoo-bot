@@ -96,7 +96,6 @@ def get_config(section):
 			stored_conf[section] = options
 	return stored_conf[section]
 
-
 def save_db(server, db, object):
 	"""Save a database (json) inside a folder."""
 	folder = os.path.join(config_base, server)

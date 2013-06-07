@@ -244,14 +244,19 @@ class UserCommands(Commands):
 		"""fmregister ``lastfm username``
 
 		Associate your current nick with a lastfm username."""
-		username = self.lastfm.get_user(arguments[0])
+		lastfm_users = self.load_db(bot.server, 'lastfm_users')
+		username = arguments[0]
+		for k,v in lastfm_users.iteritems():
+			if v.lower() == username.lower():
+				return "%s is already registered to %s." % (username, k)
+
+		username = self.lastfm.get_user(username)
 		try:
 			username.get_id()
 		except WSError as e:
 			return str(e)
 
 		username = str(username)
-		lastfm_users = self.load_db(bot.server, 'lastfm_users')
 		if lastfm_users == None:
 			lastfm_users = {}
 		lastfm_users[user.nick.lower()] = username
