@@ -15,7 +15,7 @@
 
 import re, os
 from shlex import shlex
-from urllib import urlencode, urlopen
+from urllib import urlencode, urlopen, url2pathname
 from json import loads
 from inspect import getargspec
 
@@ -287,7 +287,7 @@ class UserCommands(Commands):
 		if not song:
 			song = user.get_recent_tracks(2)[0][0]
 			msg = 'last played %s\n%s'
-		return msg % (song, song.get_url())
+		return msg % (song, url2pathname(song.get_url()))
 
 	def do_np(self, user, arguments, bot):
 		"""np [user]
