@@ -159,7 +159,7 @@ class Commands():
 		If [command] is specified then you will get help for that command."""
 
 		if not arguments:
-			cmds = ', '.join([self.prefix+cmd for cmd in self.commands])
+			cmds = ', '.join(sorted([self.prefix+cmd for cmd in self.commands]))
 			return "Available commands are %s.\nTry %shelp ``command`` for command "\
 					'specific help.' % (cmds, self.prefix)
 		else:
@@ -244,6 +244,7 @@ class UserCommands(Commands):
 		"""fmregister ``lastfm username``
 
 		Associate your current nick with a lastfm username."""
+
 		lastfm_users = self.load_db(bot.server, 'lastfm_users')
 		username = arguments[0]
 		for k,v in lastfm_users.iteritems():
@@ -262,6 +263,19 @@ class UserCommands(Commands):
 		lastfm_users[user.nick.lower()] = username
 		self.update_db(bot.server, 'lastfm_users', lastfm_users)
 		return "You have been associated with http://last.fm/user/%s" % username
+
+	def do_fmunregister(self, user, arguments, bot, nargs=0, registered=True):
+		"""fmunregister
+
+		Free up your lasftfm username to be registered for a different nick."""
+		lastfm_users = self.load_db(bot.server, 'lastfm_users')
+		user = user.nick.lower()
+		if not user in lastfm_users:
+			return "There is not lastfm username currently associated with your nick."
+		username = lastfm_users[user]
+		del(lastfm_users[user])
+		self.update_db(bot.server, 'lastfm_users', lastfm_users)
+		return "You are no longer associated with http://last.fm/%s" % username
 
 	def _now_playing(self, user):
 		"""Get the current playing song of a lastfm user"""
