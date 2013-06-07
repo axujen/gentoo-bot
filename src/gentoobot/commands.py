@@ -280,14 +280,14 @@ class UserCommands(Commands):
 	def _now_playing(self, user):
 		"""Get the current playing song of a lastfm user"""
 		try:
-			np = user.get_now_playing()
+			song = user.get_now_playing()
 		except IndexError:
 			raise GottaGoFast("User %s has not scrobbled anything yet." % user)
-		if not np:
-			last_song = user.get_recent_tracks(2)[0][0]
-			return "last played %s." % last_song
-		else:
-			return "are playing %s." % str(np)
+		msg = 'are playing %s\n%s'
+		if not song:
+			song = user.get_recent_tracks(2)[0][0]
+			msg = 'last played %s\n%s'
+		return msg % (song, song.get_url())
 
 	def do_np(self, user, arguments, bot):
 		"""np [user]
