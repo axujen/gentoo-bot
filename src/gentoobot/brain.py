@@ -14,79 +14,45 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re, json, random, os
+import re, os, random
 from shutil import copy2
-from collections import defaultdict
+
+import redis
 
 from gentoobot.logger import logger
 
 class Brain(object):
 	def __init__(self, file):
-		self.file = file
-		self.brain = self.populate_brain(file)
-
-	def populate_brain(self, file):
-		"""Populate the brain from a json file"""
-		logger.warning('Populating the bots brain from %s', file)
-		brain = defaultdict(set)
-		with open(file, 'r') as f:
-			tmp_brain = json.load(f)
-
-		for item in tmp_brain:
-			brain[item] = set(tmp_brain[item])
-
-		# backup the original brain just in case.
-		bkp = '.'.join((file, 'bkp'))
-		if os.path.exists(bkp):
-			os.remove(bkp)
-		logger.warning('backing up the brain file to %s' % bkp)
-		copy2(file, bkp)
-
-		logger.warning('Loaded brain, found %d keys', len(brain))
-		return brain
+		self.db = redis.Redis('localhost', db=0)
 
 	def save_brain(self):
 		"""Save the brain to a file"""
-		logger.warning('Writing the brain database, this might take a while.')
-		brain = {}
-		for item in self.brain:
-			brain[item] = list(self.brain[item])
-		with open(self.file, 'w') as buffer_file:
-			json.dump(brain, buffer_file)
+		logger.warning('Writing the brain database')
+		self.db.save()
 		logger.warning('Finished writting the brain database')
 
-	def process_word(self, word):
-		word = re.sub(r'[^\w]+', '', word)
-		return word
-
 	def process_line(self, line):
-		words = line.split()
-		linebrain = defaultdict(set)
-		for id, word in zip(xrange(len(words)-3), words):
-			word = self.process_word(word)
-			next = self.process_word(words[id+1])
+		words = re.sub(r'[^a-zA-Z\s]', '', line).split()
+		for id, word in zip(xrange(len(words)-2), words):
+			next = words[id+1]
+			val1 = words[id+2]
 
-			val1 = self.process_word(words[id+2])
-			val2 = self.process_word(words[id+3])
-
-			key = ' '.join((word, next))
-			linebrain[key].update(( val1, val2 ))
-			self.brain[key].update(( val1, val2 ))
-
-		return linebrain
+			key = ' '.join((word, next)).lower()
+			self.db.sadd(key, val1)
+		return words
 
 	def generate_sentence(self, msg):
 		"""Generate a sentence based on msg"""
 		logger.warning('Generating sentence based on %s', msg)
-		words = msg.split()
+		words = self.process_line(msg)
 		seed = random.randint(0, len(words)-2)
 		seed, next, = words[seed], words[seed+1]
 		w1, w2 = seed, next
 		sentence, w = [w1, w2], 2
 		for i in xrange(random.randint(len(words)-5, len(words)+5)):
 			key = ' '.join((w1, w2)).lower()
-			if key in self.brain:
-				w3 = random.choice(list(self.brain[key]))
+			if self.db.exists(key):
+				w3 = self.db.srandmember(key)
 			else:
 				try:
 					w3 = words[w]

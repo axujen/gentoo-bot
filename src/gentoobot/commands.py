@@ -94,7 +94,7 @@ class Commands():
 
 		if registered and not self._is_registered(user, bot):
 			return "You must be registered and logged in to your irc nick to use"\
-					"this command"
+					" this command."
 
 		if argslen < nargs:
 			suffix = ''
@@ -160,7 +160,7 @@ class Commands():
 
 		if not arguments:
 			cmds = ', '.join([self.prefix+cmd for cmd in self.commands])
-			return "Available commands are %s.\nTry %shelp `command` for command "\
+			return "Available commands are %s.\nTry %shelp ``command`` for command "\
 					'specific help.' % (cmds, self.prefix)
 		else:
 			cmd = arguments[0]
