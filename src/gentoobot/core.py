@@ -261,6 +261,7 @@ class GentooBot(GentooBotFrame):
 		if self.ig_keywords == None:
 			self.ig_keywords = [None]
 
+		self.chattiness = 10
 		self.replies = self._get_replies()
 		self.treplies = self._get_treplies()
 		self.last_reply = 0
@@ -364,6 +365,9 @@ class GentooBot(GentooBotFrame):
 			self.tell(channel, user, self.brain.generate_sentence(msg))
 			return True
 		elif re.search(r'\b%s\b' % self.nick, msg):
+			self.say(channel, self.brain.generate_sentence(msg))
+			return True
+		elif random.randint(0, 100) <= self.chattiness:
 			self.say(channel, self.brain.generate_sentence(msg))
 			return True
 		return
