@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re, sys, random, json, time
+import re, sys, random, json, time, os
 from urllib2 import urlopen, HTTPError
 from urlparse import urlparse
 from time import time, sleep
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from thread import start_new_thread
-import traceback
+from signal import signal, SIGINT
 
 import requests
 import chardet
@@ -29,9 +29,9 @@ import irc.bot
 from irc.client import NickMask, Event
 
 from gentoobot import logger
-from gentoobot.config import get_config, load_db
+from gentoobot.config import get_config, load_db, config_base
 from gentoobot.commands import commands
-from gentoobot.brain import brain
+from gentoobot.brain import Brain
 
 def convert_bytes(bytes):
     bytes = float(bytes)
@@ -75,6 +75,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 		self.password = password
 
 		self.wholist = {}
+		self.brain = Brain(os.path.join(config_base, 'brain.txt'))
 
 	def on_welcome(self, c, e):
 		logger.log_event(self.server, e)
@@ -240,6 +241,13 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
 
 		self.say(channel, "%s, %s" % (user, message))
 
+	def quit(self, *args):
+		"""Disconnect and save the brain"""
+		self.disconnect('Bye Bye')
+		logger.logger.warning("Disconnected from the server!")
+		self.brain.save_brain()
+		raise SystemExit
+
 class GentooBot(GentooBotFrame):
 	"""The actual bot"""
 	def __init__(self, server, port, channel, nick, password=None,
@@ -267,7 +275,7 @@ class GentooBot(GentooBotFrame):
 
 	def actions(self, channel, user, message):
 		try:
-			brain.process_line(message)
+			self.brain.process_line(message)
 			start_new_thread(commands.run, (self, channel, user, message))
 			self.reply(channel, user, message)
 		except Exception as e:
@@ -353,10 +361,10 @@ class GentooBot(GentooBotFrame):
 		"""Reply with a randomly generated sentence based on ``msg`"""
 		if msg.startswith(self.nick):
 			msg = ' '.join(msg.split()[1:])
-			self.tell(channel, user, brain.generate_sentence(msg))
+			self.tell(channel, user, self.brain.generate_sentence(msg))
 			return True
 		elif re.search(r'\b%s\b' % self.nick, msg):
-			self.say(channel, brain.generate_sentence(msg))
+			self.say(channel, self.brain.generate_sentence(msg))
 			return True
 		return
 
@@ -395,8 +403,9 @@ def main():
 			password=opt['password'], reconnect=int(misc['reconnect']))
 	logger.logger.warning('Connecting %s to %s in %s' % (opt['nick'],opt['channel'],opt['server']))
 
+	signal(SIGINT, bot.quit)
 	try:
 		bot.start()
-	except KeyboardInterrupt:
-		logger.logger.warning('Disconnecting from the server')
-		bot.disconnect(msg='Bye Bye!')
+	except Exception as e:
+		logger.error_log(exception)
+		bot.quit()

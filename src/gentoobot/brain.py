@@ -14,21 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re, json, random
-import os.path
+import re, json, random, os
 from shutil import copy2
 from collections import defaultdict
-from thread import start_new_thread
-from signal import signal, SIGINT, SIG_IGN, SIG_DFL
 
 from gentoobot.logger import logger
-from gentoobot.config import config_base
 
 class Brain(object):
 	def __init__(self, file):
 		self.file = file
 		self.brain = self.populate_brain(file)
-		self.buffer, self.max_buffer = 0, 10
 
 	def populate_brain(self, file):
 		"""Populate the brain from a json file"""
@@ -52,16 +47,13 @@ class Brain(object):
 
 	def save_brain(self):
 		"""Save the brain to a file"""
-		self.buffer += 1
-		if self.buffer >= self.max_buffer:
-			logger.warning('Writing the buffer file!')
-			brain = {}
-			for item in self.brain:
-				brain[item] = list(self.brain[item])
-			with open(self.file, 'w') as buffer_file:
-				json.dump(brain, buffer_file)
-			self.buffer = 0
-			logger.warning('Finished writting the buffer file!')
+		logger.warning('Writing the brain database, this might take a while.')
+		brain = {}
+		for item in self.brain:
+			brain[item] = list(self.brain[item])
+		with open(self.file, 'w') as buffer_file:
+			json.dump(brain, buffer_file)
+		logger.warning('Finished writting the brain database')
 
 	def process_word(self, word):
 		word = re.sub(r'[^\w]+', '', word)
@@ -82,9 +74,6 @@ class Brain(object):
 			self.brain[key].update(( val1, val2 ))
 
 		return linebrain
-		signal(SIGINT, SIG_IGN)
-		self.save_brain()
-		signal(SIGINT, SIG_DFL)
 
 	def generate_sentence(self, msg):
 		"""Generate a sentence based on msg"""
@@ -107,6 +96,3 @@ class Brain(object):
 			w1, w2 = w2, w3
 			w += 1
 		return ' '.join(sentence)
-
-brain_file =  os.path.join(config_base, 'brain.txt')
-brain = Brain(brain_file)

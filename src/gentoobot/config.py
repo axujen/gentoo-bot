@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
-from os import makedirs
+import os
 from ConfigParser import ConfigParser
 from argparse import ArgumentParser
 import json
@@ -62,7 +61,7 @@ def get_config(section):
 	config_base = os.path.normpath(os.path.expanduser(os.path.expandvars(args['config'])))
 
 	if not os.path.exists(config_base):
-		makedirs(config_base)
+		os.makedirs(config_base)
 
 	if not os.path.isdir(config_base):
 		raise ValueError('%s is not a directory' % config_base)
@@ -90,7 +89,7 @@ def save_db(server, db, object):
 
 	if not os.path.exists(folder):
 		logger.warning('Creating new server db folder "%s"' % folder)
-		makedirs(folder)
+		os.makedirs(folder)
 
 	if not os.path.isdir(folder):
 		raise ValueError('"%s" is not a directory' % folder)

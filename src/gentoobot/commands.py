@@ -21,7 +21,6 @@ from inspect import getargspec
 
 from pylast import LastFMNetwork, WSError
 from bs4 import BeautifulSoup
-import ftputil
 
 from config import get_config, save_db, load_db
 from gentoobot import logger
