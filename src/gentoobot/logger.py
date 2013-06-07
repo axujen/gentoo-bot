@@ -20,7 +20,6 @@ from collections import defaultdict
 import logging
 import logging.handlers
 
-
 # Console log
 logger = logging.getLogger('console')
 logger.setLevel(logging.DEBUG)

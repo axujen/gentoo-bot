@@ -14,11 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import os, json
 from ConfigParser import ConfigParser
 from argparse import ArgumentParser
 from ast import literal_eval
-import json
 
 
 # Config defaults.
@@ -97,6 +96,7 @@ def get_config(section):
 			stored_conf[section] = options
 	return stored_conf[section]
 
+
 def save_db(server, db, object):
 	"""Save a database (json) inside a folder."""
 	folder = os.path.join(config_base, server)
@@ -114,7 +114,7 @@ def save_db(server, db, object):
 		raise ValueError('"%s" is not a file' % db_file)
 
 	with open(db_file, 'w') as db_file:
-		json.dump(object, db_file)
+		json.dump(object, db_file, indent=4)
 
 def load_db(server, db):
 	"""Load a json database."""
