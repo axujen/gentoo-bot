@@ -368,7 +368,7 @@ class GentooBot(GentooBotFrame):
 		elif re.search(r'\b%s\b' % self.nick, msg):
 			self.say(channel, self.brain.generate_sentence(msg))
 			return True
-		elif random.randint(0, 100) < self.chattiness:
+		elif random.randint(0, 10) < self.chattiness:
 			self.say(channel, self.brain.generate_sentence(msg))
 			return True
 		return
