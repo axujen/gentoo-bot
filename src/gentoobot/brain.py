@@ -70,7 +70,7 @@ class Brain(object):
 	def process_line(self, line):
 		words = line.split()
 		linebrain = defaultdict(set)
-		for id, word in zip(range(len(words)-3), words):
+		for id, word in zip(xrange(len(words)-3), words):
 			word = self.process_word(word)
 			next = self.process_word(words[id+1])
 
@@ -94,7 +94,7 @@ class Brain(object):
 		seed, next, = words[seed], words[seed+1]
 		w1, w2 = seed, next
 		sentence, w = [w1, w2], 2
-		for i in range(random.randint(len(words)-5, len(words)+5)):
+		for i in xrange(random.randint(len(words)-5, len(words)+5)):
 			key = ' '.join((w1, w2)).lower()
 			if key in self.brain:
 				w3 = random.choice(list(self.brain[key]))
