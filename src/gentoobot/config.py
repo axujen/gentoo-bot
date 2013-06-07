@@ -70,6 +70,7 @@ def get_config(section):
 		configfile = os.path.join(config_base, 'config.cfg')
 
 		if not os.path.exists(config_base):
+			logger.warning('Creating new configuration directory %s' % config_base)
 			os.makedirs(config_base)
 
 		if not os.path.isdir(config_base):
@@ -80,21 +81,20 @@ def get_config(section):
 			with open(configfile, 'wb') as f:
 				config.write(f)
 		else:
+			logger.warning('Loading configuration from %s' % configfile)
 			config.read(configfile)
 
-		options = dict(config.items(section))
-
-		for opt in options:
-			try:
-				options[opt] = literal_eval(options[opt])
-			except (ValueError, SyntaxError):
-				continue
-
-		for arg in args:
-			if not args[arg] == None:
-				options[arg] = args[arg]
-		stored_conf[section] = options
-
+		for section in config.sections():
+			options = dict(config.items(section))
+			for opt in options:
+				try:
+					options[opt] = literal_eval(options[opt])
+				except (ValueError, SyntaxError):
+					continue
+			for arg in args:
+				if not args[arg] == None:
+					options[arg] = args[arg]
+			stored_conf[section] = options
 	return stored_conf[section]
 
 def save_db(server, db, object):
