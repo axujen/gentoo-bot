@@ -262,7 +262,7 @@ class UserCommands(Commands):
 			lastfm_users = {}
 		lastfm_users[user.nick.lower()] = username
 		self.update_db(bot.server, 'lastfm_users', lastfm_users)
-		return "You have been associated with http://last.fm/user/%s" % username
+		return "You have been associated with %s" % username.get_url()
 
 	def do_fmunregister(self, user, arguments, bot, nargs=0, registered=True):
 		"""fmunregister
@@ -275,7 +275,7 @@ class UserCommands(Commands):
 		username = lastfm_users[user]
 		del(lastfm_users[user])
 		self.update_db(bot.server, 'lastfm_users', lastfm_users)
-		return "You are no longer associated with http://last.fm/%s" % username
+		return "You are no longer associated with %s" % username.get_url()
 
 	def _now_playing(self, user):
 		"""Get the current playing song of a lastfm user"""
@@ -283,11 +283,11 @@ class UserCommands(Commands):
 			song = user.get_now_playing()
 		except IndexError:
 			raise GottaGoFast("User %s has not scrobbled anything yet." % user)
-		msg = 'are playing %s\n%s'
+		msg = 'are playing %s from %s\n%s'
 		if not song:
 			song = user.get_recent_tracks(2)[0][0]
-			msg = 'last played %s\n%s'
-		return msg % (song, url2pathname(song.get_url()))
+			msg = 'last played %s from %s\n%s'
+		return msg % (song, song.get_album().title, url2pathname(song.get_url()))
 
 	def do_np(self, user, arguments, bot):
 		"""np [user]
