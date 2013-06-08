@@ -450,5 +450,18 @@ class UserCommands(Commands):
 			links.append(shortLink)
 		return "Results are %s" % '\n'.join(links)
 
+	def do_isup(self, user, arguments, bot, nargs=1):
+		"""isup ``website``
+
+		Check if webpage is up or down."""
+		query = arguments[0]
+		url = "http://isup.me/%s" % query
+		data = urlopen(url).read()
+		soup = BeautifulSoup(data)
+		reply = soup.find('div', {'id': 'container'}).contents[0].strip()
+		if reply == "It's just you.":
+			return "%s is up!" % query
+		return "It seems like %s is down." % query
+
 lastfm_conf = get_config('LASTFM')
 commands = UserCommands(lastfm_conf['api_pub'], lastfm_conf['api_secret'])
