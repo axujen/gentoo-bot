@@ -411,5 +411,5 @@ def main():
 	try:
 		bot.start()
 	except Exception as e:
-		logger.error_log(exception)
+		logger.error_log(e)
 		bot.quit()
