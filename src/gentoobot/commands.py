@@ -236,8 +236,7 @@ class UserCommands(Commands):
 		try:
 			user.get_id()
 		except WSError as e:
-			raise GottaGoFast("Unknown name %s\nTry registering using fmregister"\
-				" with a valid lastfm username." % str(user))
+			raise GottaGoFast("[LASTFM ERROR] %s" % e)
 		return user
 
 	def do_fmregister(self, user, arguments, bot, nargs=1, registered=True):
