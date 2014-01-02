@@ -116,5 +116,7 @@ def format_log(type, source, target, arguments):
 	elif type == 'nick':
 		entry = '-- %s (%s) is now known as %s' % (source.nick, source, target)
 	elif type == 'mode':
-		entry = '-- Mode %s [ %s %s ] by %s' % (target, arguments[0], arguments[1], source.nick)
+		entry = '-- Mode %s [ %s ] by %s' % (target, ' '.join(arguments), source.nick)
+	else:
+		entry = "%s - %s - %s" % ( target, arguments, source.nick )
 	return entry
