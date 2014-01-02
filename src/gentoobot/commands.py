@@ -283,6 +283,9 @@ class UserCommands(Commands):
 			song = user.get_now_playing()
 		except IndexError:
 			raise GottaGoFast("User %s has not scrobbled anything yet." % user)
+		except WSError as e:
+			raise GottaGoFast("[LASTFM ERROR] %s" % e)
+
 		msg = 'are playing %s from %s\n%s'
 		if not song:
 			song = user.get_recent_tracks(2)[0][0]
