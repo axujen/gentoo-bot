@@ -293,8 +293,8 @@ class GentooBot(GentooBotFrame):
 
                 curtime = int(time())
                 for treply in self.treplies:
-                        if not curtime >= self.last_reply+20:
-                                logger.logger.warning('Timed reply cooldown left %d', self.last_reply+20-curtime)
+                        if not curtime >= self.last_reply+self.chattiness:
+                                logger.logger.warning('Timed reply cooldown left %d', self.last_reply+self.chattiness-curtime)
                                 return
                         status = getattr(self, treply)(channel, user, message)
                         if status == True:
