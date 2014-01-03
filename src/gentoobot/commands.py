@@ -246,20 +246,21 @@ class UserCommands(Commands):
 
 		lastfm_users = self.load_db(bot.server, 'lastfm_users')
 		username = arguments[0]
-		for k,v in lastfm_users.iteritems():
-			if v.lower() == username.lower():
-				return "%s is already registered to %s." % (username, k)
+		if not lastfm_users == None:
+			for k,v in lastfm_users.iteritems():
+				if v.lower() == username.lower():
+					return "%s is already registered to http://last.fm/user/%s/"\
+							% (username, k)
 
 		username = self.lastfm.get_user(username)
 		try:
 			username.get_id()
 		except WSError as e:
-			return str(e)
+			return "[LASTFM ERROR] %s" % e
 
-		username = str(username)
 		if lastfm_users == None:
 			lastfm_users = {}
-		lastfm_users[user.nick.lower()] = username
+		lastfm_users[user.nick.lower()] = str(username)
 		self.update_db(bot.server, 'lastfm_users', lastfm_users)
 		return "You have been associated with %s" % username.get_url()
 
@@ -274,7 +275,7 @@ class UserCommands(Commands):
 		username = lastfm_users[user]
 		del(lastfm_users[user])
 		self.update_db(bot.server, 'lastfm_users', lastfm_users)
-		return "You are no longer associated with %s" % username.get_url()
+		return "You are no longer associated with http://last.fm/user/%s/" % username
 
 	def _now_playing(self, user):
 		"""Get the current playing song of a lastfm user"""
