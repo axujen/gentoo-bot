@@ -94,7 +94,7 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
                 user = e.source
                 message = e.arguments[0]
                 try:
-                        self.actions(channel, user, message)
+                        self.pub_commands(channel, user, message)
                 except Exception as e:
                         logger.error_log(e)
 
@@ -102,12 +102,12 @@ class GentooBotFrame(irc.bot.SingleServerIRCBot):
                 logger.log_event(self.server, e)
                 user = e.source
                 msg = e.arguments[0]
-                self.private_actions(user, msg)
+                self.priv_commands(user, msg)
 
-        def actions(self, channel, user, message):
+        def pub_commands(self, channel, user, message):
                 pass
 
-        def private_actions(self, user, msg):
+        def priv_commands(self, user, msg):
                 pass
 
         def on_action(self, c, e):
@@ -272,14 +272,14 @@ class GentooBot(GentooBotFrame):
                 self.url_pattern = re.compile(r"(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
                 self.smiley_pattern = re.compile(r"([:x=;]{1,2}(?:\)|D|P|O|o))(?:\s|$)", re.I)
 
-        def actions(self, channel, user, message):
+        def pub_commands(self, channel, user, message):
                 try:
                         start_new_thread(commands.run, (self, channel, user, message))
                         self.reply(channel, user, message)
                 except Exception as e:
                         logger.error_log(e, self.server)
 
-        def private_actions(self, user, message):
+        def priv_commands(self, user, message):
                 try:
                         start_new_thread(commands.run, (self, user.nick, user, message))
                 except Exception as e:
