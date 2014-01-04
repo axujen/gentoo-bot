@@ -8,11 +8,11 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.	If not, see <http://www.gnu.org/licenses/>.
 
 import os, json
 from ConfigParser import ConfigParser
@@ -27,8 +27,8 @@ config_base = os.path.normpath(os.path.expandvars(os.path.expanduser(config_base
 stored_conf = {}
 
 config.add_section('LASTFM')
-config.set('LASTFM', 'api_pub',		'1af49b4138e72da18bae9e77f1af46aa')
-config.set('LASTFM', 'api_secret',	'3421bd09678c3a191310c5433017e4a6')
+config.set('LASTFM', 'api_pub',		'af6a640a95ace00ee058282b70846ba0')
+config.set('LASTFM', 'api_secret',	'1f8545b425f3f0de178a61c974732057')
 
 config.add_section('CONNECTION')
 config.set('CONNECTION', 'channel',		'#Gentoobot')

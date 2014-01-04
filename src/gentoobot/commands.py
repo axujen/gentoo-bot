@@ -7,11 +7,11 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.	If not, see <http://www.gnu.org/licenses/>.
 
 import re, os
 from shlex import shlex
@@ -27,14 +27,15 @@ from gentoobot import logger
 
 # Raised when you want to force a method to stop executing a command and print
 # the output of this exception
+# TODO: Stop using exceptions as flow control
 class GottaGoFast(Exception): pass
 
 def split(value):
-    lex = shlex(value)
-    lex.quotes = '"'
-    lex.whitespace_split = True
-    lex.commenters = ''
-    return list(lex)
+	lex = shlex(value)
+	lex.quotes = '"'
+	lex.whitespace_split = True
+	lex.commenters = ''
+	return list(lex)
 
 class Commands():
 	def __init__(self, prefix=':'):
@@ -171,10 +172,10 @@ class Commands():
 
 					if self.commands[command]['registered']:
 						help += "\nNote: You must be registered and logged in "\
-							"to your irc nick to use this command."
+								"to your irc nick to use this command."
 					if self.commands[command]['admin']:
 						help += "\nNote: You must be in my admin list to use "\
-							"this command."
+								"this command."
 
 					return "Usage %s%s" % (self.prefix, help)
 			return 'Unknown command "%s"' % cmd

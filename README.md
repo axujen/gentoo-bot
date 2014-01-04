@@ -28,8 +28,6 @@ users a reason not to put the bot on their ignore list.
 
 #Requirements:
 * The bot is only being tested under GNU/Linux and FreeBSD 9 with python2.7
-* [requests](https://pypi.python.org/pypi/requests/2.1.0)
-* [chardet](https://pypi.python.org/pypi/chardet)
 * [python-irc](https://pypi.python.org/pypi/irc)
 * [pylast](https://pypi.python.org/pypi/pylast)
 * [BeautifulSoup4](http://www.crummy.com/software/BeautifulSoup)

@@ -8,17 +8,16 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.	If not, see <http://www.gnu.org/licenses/>.
 
 import os
 from glob import glob
 from collections import defaultdict
-import logging
-import logging.handlers
+import logging, logging.handlers
 
 # Console log
 logger = logging.getLogger('console')
@@ -118,5 +117,5 @@ def format_log(type, source, target, arguments):
 	elif type == 'mode':
 		entry = '-- Mode %s [ %s ] by %s' % (target, ' '.join(arguments), source.nick)
 	else:
-		entry = "%s - %s - %s" % ( target, arguments, source.nick )
+		entry = "%s -> %s: %s" % ( source.nick, target, arguments )
 	return entry
