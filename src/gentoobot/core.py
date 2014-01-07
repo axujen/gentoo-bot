@@ -17,7 +17,6 @@
 import re, random, json, time, thread, signal
 from urllib2 import urlopen, Request
 from urlparse import urlparse
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import irc.bot
 from irc.client import NickMask, Event
